@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import PreflopDrill from "./pages/PreflopDrill";
+import Progress from "./pages/Progress";
 import RangeViewer from "./pages/RangeViewer";
 
 const NAV = [
@@ -47,7 +48,7 @@ export default function App() {
           <Route path="/drill" element={<PreflopDrill />} />
           <Route path="/postflop" element={<Placeholder name="Postflop trainer" />} />
           <Route path="/tools" element={<Placeholder name="Equity & odds" />} />
-          <Route path="/progress" element={<Placeholder name="Progress" />} />
+          <Route path="/progress" element={<Progress />} />
           <Route path="/editor" element={<Placeholder name="Range editor" />} />
         </Routes>
       </main>
