@@ -67,6 +67,7 @@ const MODES = [
   { id: "postflop", label: "Postflop" },
   { id: "math", label: "Odds drills" },
   { id: "review", label: "Real hands" },
+  { id: "pushfold", label: "Push/fold" },
 ];
 const GRADE_ICON: Record<string, string> = { best: "✓", good: "✓", minor: "⚠", mistake: "✕" };
 

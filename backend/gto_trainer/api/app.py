@@ -13,6 +13,7 @@ from . import (
     routes_drill,
     routes_exploit,
     routes_postflop,
+    routes_pushfold,
     routes_review,
     routes_spots,
     routes_stats,
@@ -45,6 +46,7 @@ app.include_router(routes_postflop.router)
 app.include_router(routes_tools.router)
 app.include_router(routes_exploit.router)
 app.include_router(routes_review.router)
+app.include_router(routes_pushfold.router)
 
 
 @app.get("/api/health")

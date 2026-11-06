@@ -42,6 +42,7 @@ The SQLite database lives at `backend/data/trainer.db`. Delete it to reset your 
 | **Progress** | Accuracy, frequency error and EV loss. Rolling charts. Accuracy by position, street, spot type and hand class. **Top leaks** in plain English (e.g. *"You over-fold BB vs BTN open with suited gappers — 4 of 5 decisions off; the solution mostly plays call (100%)"*). Recent decisions. |
 | **Range editor** | Paint a range with 100/75/50/25% brushes or type notation, then compare it against any chart action. You get overlap, Jaccard, over- and under-included hands, and a diverging difference heatmap. Quiz mode hides the answer. Ranges can be saved. |
 | **Hand review** | Import PokerStars/GGPoker cash histories (paste or `.txt` files; a synthetic sample is built in). Every hero decision is mapped to a spot and graded, and the biggest deviations are listed first. The hand view shows the action timeline, the solution's mix for each decision, and the full range. Real-play decisions feed the progress page ("Real hands") and leak mining, and mistakes are queued for spaced-repetition drills. |
+| **Push/fold (ICM)** | Short-stack shove/call equilibria for 2–9 players with ICM (or chip EV) payoffs and antes. Presets range from heads-up and 6-max Nash to an SNG bubble and an MTT final table. Shows shove and call charts per position with the EV margin of every hand, ICM equity, bubble factors, and a graded drill on the table you set up. |
 
 ---
 
@@ -385,6 +386,30 @@ guessing.
 Imported hands are deduplicated by site + hand id. Scored decisions are logged with
 `mode="review"`; on an existing database the new `hand_ref` column is added automatically.
 
+## Push/fold and ICM
+
+**ICM** (`poker/icm.py`) uses Malmuth–Harville. The chance of finishing next is proportional
+to stack among the players still unplaced. It is computed with a dynamic program over the
+set of players already placed, which is instant for 9 players and checked against
+brute-force permutations. Busted players take the bottom places. `bubble_factor` gives the
+risk premium of one stack against another.
+
+**Game** (`solver/pushfold.py`):
+- First-in players shove or fold. Players behind a shove call or fold, with one caller at
+  most (no overcalls), which is the standard push/fold simplification.
+- Payoffs are the ICM equity of the end-of-hand stacks, or chips in chip-EV mode.
+- Hand-vs-range equities and card removal come from the 169×169 preflop table (about ±1%).
+  Opponents' hands are treated as independent given yours.
+
+**Solving.** Fictitious play: best-respond to the current average strategies, then average
+in with step 1/t. "EV of folding" includes everything that can still happen behind you,
+which matters under ICM because other players busting changes your equity.
+
+**Validation.** Heads-up at 10bb with no ante gives SB shoves 58% and BB calls 38%, matching
+the published Nash values, with exploitability below 0.001bb. ICM makes bubble calls much
+tighter than chip EV, and antes widen shoves; both are tested. Stacks above 20bb get a
+warning, because real strategies there use smaller raises.
+
 ## Grading, scores, spaced repetition, leaks
 
 **Mixed-strategy grading** (`training/grading.py`). At equilibrium, every action with
@@ -439,7 +464,6 @@ bonus), so practice concentrates where mistakes actually happen.
 
 ## Roadmap (stretch goals, not built)
 
-- ICM / push-fold charts.
 - Anki export of drill items.
 - Solver speed-ups: batch river subtrees across boards and Numba-compile the hot loops,
   which would allow more runouts and turn/river raise sizes.

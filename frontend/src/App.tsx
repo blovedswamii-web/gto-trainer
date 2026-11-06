@@ -4,6 +4,7 @@ import HandReview from "./pages/HandReview";
 import PostflopTrainer from "./pages/PostflopTrainer";
 import PreflopDrill from "./pages/PreflopDrill";
 import Progress from "./pages/Progress";
+import PushFold from "./pages/PushFold";
 import RangeEditor from "./pages/RangeEditor";
 import RangeViewer from "./pages/RangeViewer";
 
@@ -14,6 +15,7 @@ const NAV = [
   { to: "/tools", label: "Equity & odds" },
   { to: "/progress", label: "Progress" },
   { to: "/editor", label: "Range editor" },
+  { to: "/pushfold", label: "Push/fold (ICM)" },
   { to: "/review", label: "Hand review" },
 ];
 
@@ -52,6 +54,7 @@ export default function App() {
           <Route path="/progress" element={<Progress />} />
           <Route path="/editor" element={<RangeEditor />} />
           <Route path="/review" element={<HandReview />} />
+          <Route path="/pushfold" element={<PushFold />} />
         </Routes>
       </main>
       <footer className="border-t border-surface-3 px-4 py-2 text-center text-[11px] text-ink-3">
