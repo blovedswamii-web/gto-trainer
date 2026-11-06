@@ -8,7 +8,7 @@ install: backend/.venv/.installed frontend/node_modules/.installed
 
 backend/.venv/.installed: backend/pyproject.toml
 ifdef UV
-	cd backend && uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -e ".[dev]"
+	cd backend && uv venv --allow-existing --python 3.12 .venv && uv pip install --python .venv/bin/python -e ".[dev]"
 else
 	cd backend && python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 endif
