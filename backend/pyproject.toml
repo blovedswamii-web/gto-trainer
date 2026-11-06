@@ -10,6 +10,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "pydantic>=2.6",
     "genanki>=0.13",
+    "numba>=0.60",
 ]
 
 [project.optional-dependencies]
@@ -42,5 +43,5 @@ warn_unreachable = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["treys.*", "genanki.*"]
+module = ["treys.*", "genanki.*", "numba.*"]
 ignore_missing_imports = true

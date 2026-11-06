@@ -18,3 +18,7 @@ frontend/dist/
 
 # Full per-node strategies for exploit mode (~17 MB); regenerate with `make precompute`
 backend/data/solutions/*.strategy.npz
+
+# Postflop solutions are large (tens of MB per spot); `make precompute` builds them
+backend/data/solutions/*
+!backend/data/solutions/.gitkeep

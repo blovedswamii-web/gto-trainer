@@ -29,9 +29,10 @@ from ..poker.cards import (
     parse_cards,
 )
 from ..strategies.loader import get_registry
+from .batched import BSolver, build_bgame, chance_paths, node_paths
 from .categories import classify_combos
-from .cfr import DT, ChanceNode, Node, PlayerNode, Solver, average_strategy
-from .tree import HandSet, StreetSizes, TreeConfig, action_label, build_game
+from .cfr import DT, ChanceNode, Node, PlayerNode
+from .tree import HandSet, StreetSizes, TreeConfig, action_label
 
 RangeRef = tuple[str, str, str | None, str]  # (scenario, hero, villain, action) in the registry
 
@@ -50,15 +51,22 @@ class PostflopSpotDef:
     format_id: str = "6max_100bb"
 
 
+# Bet trees. The batched engine keeps the cost per Python node independent of the number of
+# runouts, so the defaults solve *every* turn card (no turn sampling) with 4 representative
+# rivers per turn, and two sizes on every street.
+_TURN = StreetSizes(bets=(0.5, 1.0), raises=(3.0,), max_raises=1)
+_RIVER = StreetSizes(bets=(0.5, 1.0), raises=(), max_raises=0)
+
+
 def _srp_tree(pot: float, stack: float) -> TreeConfig:
     return TreeConfig(
         starting_pot=pot,
         stack=stack,
         flop=StreetSizes(bets=(0.33, 0.75), oop_bets=(), raises=(3.0,), max_raises=1),
-        turn=StreetSizes(bets=(0.75,), raises=(), max_raises=0),
-        river=StreetSizes(bets=(0.75,), raises=(), max_raises=0),
-        turn_cards=8,
-        river_cards=5,
+        turn=_TURN,
+        river=_RIVER,
+        turn_cards=None,
+        river_cards=4,
     )
 
 
@@ -67,10 +75,10 @@ def _3bp_tree(pot: float, stack: float) -> TreeConfig:
         starting_pot=pot,
         stack=stack,
         flop=StreetSizes(bets=(0.33, 0.75), oop_bets=(0.33, 0.75), raises=(3.0,), max_raises=1),
-        turn=StreetSizes(bets=(0.75,), raises=(), max_raises=0),
-        river=StreetSizes(bets=(0.75,), raises=(), max_raises=0),
-        turn_cards=8,
-        river_cards=5,
+        turn=_TURN,
+        river=_RIVER,
+        turn_cards=None,
+        river_cards=4,
     )
 
 
@@ -168,11 +176,11 @@ class SolveReport:
 def solve_spot(
     d: PostflopSpotDef,
     iterations: int = 300,
-    check_every: int = 50,
+    check_every: int = 25,
     target_pct: float = 0.3,
     progress: Callable[[str], None] | None = None,
     tree: TreeConfig | None = None,
-) -> tuple[Solver, SolveReport, tuple[HandSet, HandSet]]:
+) -> tuple[BSolver, SolveReport, tuple[HandSet, HandSet]]:
     """Run DCFR until ``iterations`` or exploitability <= ``target_pct`` % of pot."""
     say = progress or (lambda _m: None)
     board = tuple(parse_cards(d.board))
@@ -180,12 +188,14 @@ def solve_spot(
     h1, src1 = _range_hands(d.ip_range, board, d.format_id)
     t0 = time.perf_counter()
     cfg = tree or d.tree
-    game, tb = build_game(cfg, board, (h0, h1))
+    game, tb = build_bgame(cfg, board, (h0, h1))
+    s = BSolver(game, algo="dcfr")
+    mem = sum(nd.regret.nbytes + nd.strat_sum.nbytes for nd in s.player_nodes) / 2**20
     say(
-        f"{d.id}: {tb.n_player_nodes} decision nodes, hands {game.n}, "
-        f"{len(game.matrices)} showdown matrices built in {time.perf_counter() - t0:.1f}s"
+        f"{d.id}: {tb.n_player_nodes} decision nodes ({len(s.player_nodes)} batched), "
+        f"{game.batches[-1].size} river boards, hands {game.n}, {mem:.0f} MB of regrets, "
+        f"built in {time.perf_counter() - t0:.1f}s"
     )
-    s = Solver(game, algo="dcfr")
     hist: list[tuple[int, float]] = []
     pct = float("nan")
     while s.t < iterations:
@@ -252,78 +262,64 @@ def tree_config_from_dict(d: dict[str, Any]) -> TreeConfig:
     )
 
 
-def _walk_recorded(
-    node: Node, path: str, out: list[tuple[str, PlayerNode]], chance: dict[str, list[str]]
-) -> None:
-    if isinstance(node, PlayerNode):
-        if node.record:
-            out.append((path, node))
-        for a, ch in zip(node.actions, node.children, strict=True):
-            _walk_recorded(ch, f"{path}/{a}" if path else a, out, chance)
-    elif isinstance(node, ChanceNode):
-        cards = []
-        for br in node.branches:
-            c = card_to_str(br.card)
-            cards.append(c)
-            _walk_recorded(br.node, f"{path}/{c}", out, chance)
-        chance[path] = cards
-
-
 def save_solution(
     d: PostflopSpotDef,
-    s: Solver,
+    s: BSolver,
     rep: SolveReport,
     hands: tuple[HandSet, HandSet],
     out_dir: Path = SOLUTIONS_DIR,
 ) -> Path:
-    """Persist flop/turn decision nodes: average strategy, per-hand EV (bb) and reaches."""
+    """Persist flop/turn decision nodes (one entry per board): average strategy, per-hand EV
+    (bb) and reaches. Plus every node's full strategy (rivers included) for exploit mode."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    nodes: list[tuple[str, PlayerNode]] = []
-    chance: dict[str, list[str]] = {}
-    _walk_recorded(s.g.root, "", nodes, chance)
     arrays: dict[str, np.ndarray] = {}
     meta_nodes = []
-    compat = s.g.compat
-    for k, (path, nd) in enumerate(nodes):
-        actor = nd.player
+    k = 0
+    for nd in s.player_nodes:
+        if not nd.record:
+            continue
         assert nd.ev is not None and nd.reach is not None
-        opp_reach = nd.reach[1 - actor]
+        actor = nd.player
+        strat = BSolver.avg(nd)
         # Normalise counterfactual values to "EV given I hold this hand and reach this node".
-        mass = (compat @ opp_reach) if actor == 0 else (compat.T @ opp_reach)
-        ev = np.where(mass[:, None] > 1e-12, nd.ev / np.maximum(mass[:, None], 1e-12), 0.0)
-        arrays[f"s{k}"] = average_strategy(nd).astype(np.float16)
-        arrays[f"e{k}"] = ev.astype(np.float16)
-        arrays[f"r{k}"] = nd.reach[actor].astype(np.float16)
-        arrays[f"o{k}"] = nd.reach[1 - actor].astype(np.float16)
-        meta_nodes.append(
-            {
-                "k": k,
-                "path": path,
-                "actor": actor,
-                "actions": nd.actions,
-                "street": nd.info["street"],
-                "board": [card_to_str(c) for c in nd.info["board"]],
-                "pot": nd.info["pot"],
-                "to_call": nd.info["to_call"],
-                "stack": nd.info["stack"],
-            }
-        )
+        mass = s.compat_sum(actor, nd.reach[1 - actor])
+        ev = np.where(mass[:, :, None] > 1e-12, nd.ev / np.maximum(mass[:, :, None], 1e-12), 0.0)
+        for b, path in enumerate(node_paths(nd)):
+            arrays[f"s{k}"] = strat[b].astype(np.float16)
+            arrays[f"e{k}"] = ev[b].astype(np.float16)
+            arrays[f"r{k}"] = nd.reach[actor][b].astype(np.float16)
+            arrays[f"o{k}"] = nd.reach[1 - actor][b].astype(np.float16)
+            meta_nodes.append(
+                {
+                    "k": k,
+                    "path": path,
+                    "actor": actor,
+                    "actions": nd.actions,
+                    "street": nd.info["street"],
+                    "board": [card_to_str(c) for c in nd.batch.boards[b]],
+                    "pot": nd.info["pot"],
+                    "to_call": nd.info["to_call"],
+                    "stack": nd.info["stack"],
+                }
+            )
+            k += 1
     meta = {
         "spot": {**asdict(d), "tree": rep.tree or asdict(d.tree)},
         "report": asdict(rep),
         "hands": [[combo_to_str(int(c)) for c in h.combos] for h in hands],
         "weights": [[float(x) for x in h.weights] for h in hands],
         "nodes": meta_nodes,
-        "chance": chance,
+        "chance": chance_paths(s.g.root),
+        "engine": "batched",
         "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
     (out_dir / f"{d.id}.json").write_text(json.dumps(meta))
     np.savez_compressed(out_dir / f"{d.id}.npz", **arrays)  # type: ignore[arg-type]
-    # Full average strategy of every node (rivers included), quantised to 1/255. The node
-    # explorer never needs it; exploit mode does, to compute best responses.
+    # Full average strategy of every batched node (B, n, A), quantised to 1/255, in the
+    # engine's deterministic node order. Only exploit mode needs it.
     full = {
-        f"q{i}": np.round(average_strategy(nd) * 255).astype(np.uint8)
-        for i, (_, nd) in enumerate(walk_player_nodes(s.g.root))
+        f"q{i}": np.round(BSolver.avg(nd) * 255).astype(np.uint8)
+        for i, nd in enumerate(s.player_nodes)
     }
     np.savez_compressed(out_dir / f"{d.id}.strategy.npz", **full)  # type: ignore[arg-type]
     load_solution.cache_clear()

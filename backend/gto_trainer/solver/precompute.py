@@ -1,7 +1,7 @@
 """Offline precompute: preflop equity table + CFR solutions for the postflop trainer.
 
 python -m gto_trainer.solver.precompute                 # everything missing
-python -m gto_trainer.solver.precompute --force --iterations 600 --target 0.2
+python -m gto_trainer.solver.precompute --force --iterations 800 --target 0.25
 python -m gto_trainer.solver.precompute --spots srp_btn_bb_K72r --jobs 1
 """
 
@@ -13,6 +13,7 @@ import sys
 
 from ..config import SOLUTIONS_DIR
 from ..poker import preflop_equity
+from . import kernels
 from .postflop import SPOTS, save_solution, solve_spot
 
 
@@ -37,8 +38,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument("--spots", nargs="*", default=list(SPOTS))
     ap.add_argument("--iterations", type=int, default=400)
-    ap.add_argument("--target", type=float, default=0.3, help="stop at this exploitability %% pot")
-    ap.add_argument("--jobs", type=int, default=min(4, mp.cpu_count()))
+    ap.add_argument("--target", type=float, default=0.5, help="stop at this exploitability %% pot")
+    # With Numba every solve already uses all cores; parallel solves would only fight for them.
+    ap.add_argument("--jobs", type=int, default=1 if kernels.HAVE_NUMBA else min(4, mp.cpu_count()))
     ap.add_argument("--force", action="store_true", help="re-solve spots that are cached")
     a = ap.parse_args(argv)
 

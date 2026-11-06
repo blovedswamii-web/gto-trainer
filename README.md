@@ -66,12 +66,14 @@ Concretely:
   so the BB-vs-SB spots built on it are especially rough.
 - **Postflop solutions are real equilibria of a smaller game.** The bet sizes are restricted:
   - flop: 33% / 75% / all-in, plus one 3× raise and then all-in
-  - turn and river: 75% / all-in, with all-in as the only raise
+  - turn: 50% / 100% / all-in, plus one 3× raise and then all-in
+  - river: 50% / 100% / all-in, with all-in as the only raise
   - no donk bets in single-raised pots
 
-  Only **8 representative turn cards and 5 river cards per turn** are kept (see *Solver
-  design*). The strategy is converged *for that game*, not for real NLHE with every size
-  and runout. All-in equities are always exact over every runout.
+  **Every turn card is solved**, with no turn sampling. Only **4 representative river cards
+  per turn** are kept (see *Solver design*). The strategy is converged *for that game*, not
+  for real NLHE with every size and runout. All-in equities are always exact over every
+  runout.
 - **Rake is ignored.** Each format has a `rake_pct` field so imported data can declare it.
 
 ---
@@ -87,8 +89,9 @@ backend/gto_trainer/ (Python 3.12, FastAPI, SQLAlchemy 2, NumPy)
   poker/       cards & combos · vectorised evaluator · equity (exact + MC) · range notation
                odds · preflop 169×169 equity table · preflop hand categories
   strategies/  pydantic schemas · format-derived spot context · loader/registry · importer CLI
-  solver/      vector-form DCFR/CFR+ engine · Kuhn · suit isomorphism + runout sampling
-               postflop tree builder · hand categories · spot definitions · precompute CLI
+  solver/      batched DCFR engine (NumPy + Numba kernels) · reference vector CFR engine · Kuhn
+               suit isomorphism + runout sampling · postflop tree builder · hand categories
+               spot definitions · exploit mode · push/fold + ICM · precompute CLI
   training/    spot dealing · grading · SM-2 spaced repetition · progress/leak mining
                postflop node views · odds drills
   db/          models (decisions, srs_items, custom_ranges, users) · session
@@ -97,8 +100,8 @@ backend/data/
   strategies/seed/*.json      approximate seed pack (23 spots)
   strategies/imported/*.json  your imports (override seed)
   preflop_equity.npz          169×169 class-vs-class equity (Monte Carlo, ±~1%)
-  solutions/<spot>.{json,npz} cached postflop solutions (flop/turn nodes, committed)
-  solutions/<spot>.strategy.npz  full per-node strategies for exploit mode (gitignored)
+  solutions/<spot>.{json,npz}    cached postflop solutions: flop/turn nodes (local, gitignored)
+  solutions/<spot>.strategy.npz  full per-node strategies for exploit mode (local, gitignored)
 ```
 
 `GameFormat` in `gto_trainer/config.py` makes the game format **data**: player count, stack
@@ -159,7 +162,7 @@ every runout. What *is* feasible, and what's implemented, is **heads-up postflop
 with real combos, a restricted bet tree and an abstracted set of runouts. The pieces are
 below.
 
-### Engine: vector-form CFR (`solver/cfr.py`)
+### Engine: vector-form CFR (`solver/cfr.py`, the reference implementation)
 
 **Tree.** The tree contains only **public** states: betting history and dealt cards. Each
 player node stores `regret` and `strat_sum` arrays of shape `(n_hands_of_actor, n_actions)`.
@@ -185,6 +188,43 @@ showdown:  v_p =   (P0/2 + invested)           · E_p @ reach_opp
 - On Kuhn poker the engine reaches exploitability ~5e-5 in 3k iterations, with the exact
   game value −1/18 and the textbook bet/bluff ratio (`tests/test_solver.py`).
 
+### Production engine: batched over boards (`solver/batched.py`, `solver/kernels.py`)
+
+The reference engine builds one Python node per (betting state, board). Profiling it on
+K72r (8 turns × 5 rivers, about 4,800 decision nodes) showed the time split three ways:
+- O(n²) showdown matrix-vector products: ~45%
+- regret matching on many small arrays: ~25%
+- Python recursion: ~20%
+
+The batched engine changes three things:
+- **One node per betting state.** Every array gets a leading **board axis**: 1 on the flop,
+  every turn card on the turn, every river board on the river. All river subtrees on a
+  line have the same shape, so the number of Python nodes no longer depends on how many
+  runouts you keep (164 batched nodes stand for 45,876 concrete ones).
+- **O(n) terminals.**
+  - *Fold*: compatible opponent reach = total − reach on my two cards + reach on my exact
+    combo, using one `(B, n) @ (n, 52)` per-card sum.
+  - *River showdown*: opponent combos are pre-sorted by rank on every board. Weaker and
+    stronger reach are two prefix-sum lookups. Card removal is corrected exactly with the
+    same trick inside per-card groups. The identical combo always ties, so it needs no
+    correction.
+- **Numba kernels**, parallel over boards: showdown, fold sums, regret matching, the fused
+  DCFR update and strategy averaging. If Numba isn't installed, NumPy code paths compute
+  the same thing.
+
+**Correctness.** `tests/test_batched.py` builds the same game in both engines and gives
+every node the same *random* strategy. The two engines then agree on both players'
+values and best responses to 1e-5, path for path. CFR iterates agree exactly until regret
+matching splits on exact ties, and both converge to the same game value.
+
+**Speed** (K72r single-raised pot, M1 Pro, 8 cores):
+
+| Configuration | River boards | Reference engine | Batched + Numba |
+|---|---|---|---|
+| Old default tree, 8 turns × 5 rivers | 40 | 0.61 s/iteration | **0.11 s/iteration** |
+| Old tree, all 49 turns × 8 rivers | 392 | (~6 s, not run) | **0.72 s/iteration** |
+| New default: two sizes per street + turn raise, all turns × 4 rivers | 196 | — | ~1.5 s/iteration |
+
 ### Card abstraction (`solver/abstraction.py`)
 
 **Suit isomorphism (lossless).** Suit permutations that fix the board (its *stabiliser*)
@@ -203,8 +243,8 @@ A test checks that merged and fully-explicit trees agree on the game value and o
 best-response values for a fixed strategy.
 
 **Runout sampling (lossy; this is the actual abstraction).**
-- Keep `turn_cards` (default 8) and `river_cards` (default 5) representative orbits per
-  chance node.
+- Keep `turn_cards` and `river_cards` representative orbits per chance node. Defaults:
+  every turn orbit (`None`, so the turn is exact) and 4 river orbits per turn.
 - Orbits are sorted by suit relation to the board and by rank, then picked at equal
   **card-mass quantiles**, so flush cards, overcards, bricks and pairing cards are
   represented in proportion.
@@ -275,11 +315,12 @@ What it reports, as hero EV per hand:
 You also get the biggest adjustments (weighted by how often you reach the node) and a
 GTO-vs-BR comparison by hand category and grid at any node.
 
-It runs in ~1s per query, plus a few seconds the first time a spot is rebuilt. Caveats:
+It takes a few seconds per query on the default trees, plus a few seconds the first time a
+spot is rebuilt. Caveats:
 - It runs inside the same abstracted game as the solution.
 - It assumes villain plays *exactly* the edited strategy.
-- The full strategy files (~17 MB) are gitignored. `make precompute` creates them, and
-  re-solves any spot that lacks one.
+- Solution files are local (gitignored) because they are tens of MB per spot.
+  `make precompute` creates them, and re-solves any spot whose files are missing.
 
 ### Adding or changing postflop spots
 
@@ -489,5 +530,6 @@ bonus), so practice concentrates where mistakes actually happen.
 
 ## Roadmap
 
-- Solver speed-ups: batch river subtrees across boards and Numba-compile the hot loops,
-  which would allow more runouts and turn/river raise sizes.
+- Store river decision nodes too (they're solved, just not saved), so the explorer, drill and
+  review can go all the way to showdown.
+- A larger flop library. Solving is now cheap enough to precompute dozens of flops overnight.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -92,7 +93,10 @@ def test_postflop_graded_in_isomorphic_solved_spot() -> None:
     assert flop.street == "flop" and flop.action == "bet:0.33" and flop.scored
     assert flop.spot_id == "srp_btn_bb_K72r" and flop.node == "check"
     assert any("Ks 7d 2c" in n for n in flop.notes)
-    assert turn.street == "turn" and turn.action == "bet:0.75" and turn.scored
+    assert turn.street == "turn" and turn.scored and turn.action is not None
+    # 75% pot maps to the closest modelled turn size (log distance)
+    sizes = [float(a.split(":")[1]) for a in (turn.freqs or {}) if a.startswith("bet:")]
+    assert turn.action == f"bet:{min(sizes, key=lambda f: abs(np.log(0.75 / f))):g}"
     assert turn.node == "check/bet:0.33/call/9d/check"  # 9c remapped to the solved 9d
     assert flop.grade is not None and flop.grade.ev_loss is not None
     # BTN vs CO 3-bet pot: no solved spot -> explained, not graded
