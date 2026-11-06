@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "_comment": "APPROXIMATE seed charts for 6-max 100bb (2.5bb opens, SB 3bb raise-or-fold, 3-bets 3x IP / 4x OOP, 4-bets 2.2x). Hand-built approximations in the spirit of commonly published solver-derived charts. NOT solver output and NOT exact GTO. Replace by importing real solver exports (see README > Importing strategies). 'fold' is the remainder of each hand's reach.",
+  "spots": [
+    {
+      "scenario": "rfi", "hero": "UTG",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {"raise": "55+,44:0.5,33:0.25,22:0.25,A2s+,K9s+,Q9s+,J9s+,T9s,98s,87s:0.5,76s:0.5,65s:0.5,54s:0.25,AJo+,ATo:0.75,KQo,KJo:0.5"}
+    },
+    {
+      "scenario": "rfi", "hero": "HJ",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {"raise": "33+,22:0.5,A2s+,K7s+,K6s:0.5,Q9s+,Q8s:0.5,J9s+,J8s:0.5,T8s+,97s+,86s:0.5,76s,65s,54s:0.5,ATo+,A9o:0.25,KJo+,KTo:0.5,QJo,QTo:0.25,JTo:0.25"}
+    },
+    {
+      "scenario": "rfi", "hero": "CO",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {"raise": "22+,A2s+,K5s+,K4s:0.5,Q8s+,Q7s:0.5,J8s+,J7s:0.25,T7s+,97s+,86s+,75s+,64s:0.5,65s,54s,A8o+,A7o:0.5,A5o:0.5,KTo+,K9o:0.5,QTo+,JTo,T9o:0.25"}
+    },
+    {
+      "scenario": "rfi", "hero": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {"raise": "22+,A2s+,K2s+,Q4s+,Q3s:0.5,J5s+,J4s:0.5,T6s+,96s+,95s:0.25,85s+,74s+,64s+,53s+,43s:0.5,A4o+,A3o:0.5,A2o:0.5,K9o+,K8o:0.75,K7o:0.25,Q9o+,Q8o:0.25,J9o+,J8o:0.25,T9o,T8o:0.25,98o:0.5"}
+    },
+    {
+      "scenario": "rfi", "hero": "SB",
+      "source": {"type": "approximate", "label": "Approximate seed chart", "notes": "Raise-or-fold simplification: real solutions limp a large part of the SB range."},
+      "ranges": {"raise": "22+,A2s+,K3s+,K2s:0.5,Q5s+,J7s+,T7s+,96s+,86s+,75s+,64s+,54s,A2o+,K9o+,K8o:0.5,QTo+,Q9o:0.5,JTo,J9o:0.25,T9o:0.5"}
+    },
+
+    {
+      "scenario": "vs_open", "hero": "HJ", "villain": "UTG",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.5,AKs,AQs:0.5,AJs:0.25,AKo,A5s:0.5,A4s:0.5,KQs:0.25",
+        "call": "JJ:0.5,TT,99,88:0.5,77:0.25,AQs:0.5,AJs:0.75,ATs:0.5,KQs:0.75,KJs:0.5,QJs:0.5,JTs:0.5,T9s:0.25,AQo:0.5"
+      }
+    },
+    {
+      "scenario": "vs_open", "hero": "CO", "villain": "HJ",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.5,TT:0.25,AKs,AQs:0.5,AJs:0.25,AKo,AQo:0.5,A5s,A4s:0.5,KQs:0.5,KJs:0.25,QJs:0.25,JTs:0.25,T9s:0.25,65s:0.25",
+        "call": "JJ:0.5,TT:0.75,99,88,77:0.5,66:0.25,AQs:0.5,AJs:0.75,ATs,A9s:0.25,KQs:0.5,KJs:0.75,KTs:0.5,QJs:0.75,QTs:0.5,JTs:0.75,T9s:0.5,98s:0.5,87s:0.25,AQo:0.25"
+      }
+    },
+    {
+      "scenario": "vs_open", "hero": "BTN", "villain": "UTG",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.25,AKs,AQs:0.5,AKo,A5s:0.5,A4s:0.5,KQs:0.25,76s:0.25,65s:0.25",
+        "call": "JJ:0.75,TT,99,88,77,66:0.5,55:0.5,44:0.25,AQs:0.5,AJs,ATs,A9s:0.25,KQs:0.75,KJs,KTs:0.5,QJs,QTs:0.5,JTs,T9s,98s,87s:0.5,76s:0.25,AQo,AJo:0.25,KQo:0.5"
+      }
+    },
+    {
+      "scenario": "vs_open", "hero": "BTN", "villain": "CO",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "TT+,99:0.25,AJs+,ATs:0.5,A5s,A4s,A3s:0.5,KQs,KJs:0.5,K9s:0.25,QJs:0.5,JTs:0.25,T9s:0.25,76s:0.25,65s:0.25,AQo+,AJo:0.5,KQo:0.5",
+        "call": "99:0.75,88,77,66,55,44:0.5,33:0.5,22:0.5,ATs:0.5,A9s,A8s,A7s:0.5,A6s:0.5,A3s:0.25,KJs:0.5,KTs,K9s:0.5,QJs:0.5,QTs,Q9s:0.5,JTs:0.75,J9s,T9s:0.75,T8s:0.5,98s,97s:0.25,87s,86s:0.25,76s:0.75,65s:0.5,54s:0.5,AJo:0.5,ATo:0.5,KQo:0.5,KJo:0.5,QJo:0.25"
+      }
+    },
+    {
+      "scenario": "vs_open", "hero": "SB", "villain": "CO",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "TT+,99:0.5,88:0.25,ATs+,A5s,A4s:0.5,KJs+,KTs:0.5,QJs,JTs:0.5,AQo+,AJo:0.5,KQo:0.5",
+        "call": "99:0.25,88:0.25,77:0.25,A9s:0.25,KTs:0.25,QTs:0.25,JTs:0.25,T9s:0.25"
+      }
+    },
+    {
+      "scenario": "vs_open", "hero": "SB", "villain": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "TT+,99:0.75,88:0.5,77:0.25,A9s+,A8s:0.5,A5s,A4s,A3s:0.5,KTs+,K9s:0.5,QTs+,JTs,T9s:0.75,98s:0.5,87s:0.25,AJo+,ATo:0.5,KQo,KJo:0.5,QJo:0.25",
+        "call": "99:0.25,88:0.25,77:0.25,66:0.25,A8s:0.25,A7s:0.25,K9s:0.25,T9s:0.25,98s:0.25"
+      }
+    },
+
+    {
+      "scenario": "bb_defense", "hero": "BB", "villain": "UTG",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.25,AKs,AQs:0.5,AKo:0.75,A5s:0.5,A4s:0.5",
+        "call": "JJ:0.75,TT-22,AQs:0.5,AJs-A6s,A5s:0.5,A4s:0.5,A3s,A2s,KQs,KJs-K6s,QJs-Q8s,JTs-J8s,T9s,T8s,97s+,86s+,75s+,64s+,53s+,AKo:0.25,AQo,AJo,ATo:0.5,KQo,KJo:0.5,QJo:0.25"
+      }
+    },
+    {
+      "scenario": "bb_defense", "hero": "BB", "villain": "HJ",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.5,AKs,AQs:0.5,AJs:0.25,AKo,AQo:0.25,A5s:0.5,A4s:0.5,A3s:0.25,KQs:0.25,65s:0.25,54s:0.25",
+        "call": "JJ:0.5,TT-22,AQs:0.5,AJs:0.75,ATs-A6s,A5s:0.5,A4s:0.5,A3s:0.75,A2s,KQs:0.75,KJs-K5s,QJs-Q7s,JTs-J7s,T9s,T8s,T7s,97s+,96s:0.5,86s+,85s:0.5,75s+,64s+,65s:0.75,54s:0.75,53s,43s:0.5,AQo:0.75,AJo,ATo,A9o:0.5,KQo,KJo,KTo:0.5,QJo,QTo:0.5,JTo:0.5"
+      }
+    },
+    {
+      "scenario": "bb_defense", "hero": "BB", "villain": "CO",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.5,TT:0.25,AKs,AQs:0.75,AJs:0.5,ATs:0.25,AKo,AQo:0.5,A5s,A4s:0.5,A3s:0.25,KQs:0.5,KJs:0.25,K9s:0.25,QJs:0.25,J9s:0.25,T8s:0.25,76s:0.25,65s:0.25,54s:0.25",
+        "call": "JJ:0.5,TT:0.75,99-22,AQs:0.25,AJs:0.5,ATs:0.75,A9s-A6s,A4s:0.5,A3s:0.75,A2s,KQs:0.5,KJs:0.75,KTs,K9s:0.75,K8s-K2s,QJs:0.75,QTs-Q5s,JTs,J9s:0.75,J8s-J6s,T9s,T8s:0.75,T7s,T6s,98s,97s,96s,95s:0.5,87s,86s,85s,84s:0.5,76s:0.75,75s,74s,65s:0.75,64s,63s:0.5,54s:0.75,53s,52s:0.25,43s,AQo:0.5,AJo,ATo,A9o,A8o:0.75,A7o:0.5,A5o:0.5,KQo,KJo,KTo,K9o:0.5,QJo,QTo,Q9o:0.25,JTo,J9o:0.25,T9o:0.5,98o:0.25"
+      }
+    },
+    {
+      "scenario": "bb_defense", "hero": "BB", "villain": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.75,TT:0.5,99:0.25,AKs,AQs,AJs:0.75,ATs:0.5,A9s:0.25,AKo,AQo:0.75,AJo:0.25,A5s,A4s,A3s:0.5,KQs:0.75,KJs:0.5,KTs:0.25,K9s:0.25,K5s:0.25,QJs:0.5,QTs:0.25,Q9s:0.25,JTs:0.25,J9s:0.25,T9s:0.25,T8s:0.25,98s:0.25,87s:0.25,76s:0.25,65s:0.25,54s:0.25,KQo:0.25",
+        "call": "JJ:0.25,TT:0.5,99:0.75,88-22,AJs:0.25,ATs:0.5,A9s:0.75,A8s-A6s,A3s:0.5,A2s,KQs:0.25,KJs:0.5,KTs:0.75,K9s:0.75,K8s-K6s,K5s:0.75,K4s-K2s,QJs:0.5,QTs:0.75,Q9s:0.75,Q8s-Q2s,JTs:0.75,J9s:0.75,J8s-J3s,T9s:0.75,T8s:0.75,T7s-T4s,98s:0.75,97s-94s,87s:0.75,86s-84s,76s:0.75,75s,74s,73s:0.5,65s:0.75,64s,63s,54s:0.75,53s,52s:0.5,43s,42s:0.5,32s:0.5,AQo:0.25,AJo:0.75,ATo-A2o,KQo:0.75,KJo-K7o,K6o:0.5,K5o:0.25,QJo-Q8o,Q7o:0.25,JTo-J8o,J7o:0.25,T9o,T8o,T7o:0.25,98o,97o:0.5,87o,86o:0.25,76o:0.5,65o:0.25"
+      }
+    },
+    {
+      "scenario": "bb_defense", "hero": "BB", "villain": "SB",
+      "source": {"type": "approximate", "label": "Approximate seed chart", "notes": "Assumes the SB raise-or-fold seed range; a limping SB changes this spot a lot."},
+      "ranges": {
+        "raise": "TT+,99:0.5,AJs+,ATs:0.5,A5s:0.5,A4s:0.5,KQs,KJs:0.5,K5s:0.25,QJs:0.5,J9s:0.25,T8s:0.25,97s:0.25,86s:0.25,75s:0.25,64s:0.25,AJo+,ATo:0.5,KQo:0.5,KJo:0.25",
+        "call": "99:0.5,88-22,ATs:0.5,A9s-A6s,A5s:0.5,A4s:0.5,A3s,A2s,KJs:0.5,KTs-K6s,K5s:0.75,K4s-K2s,QJs:0.5,QTs-Q2s,JTs,J9s:0.75,J8s-J4s,T9s,T8s:0.75,T7s-T5s,98s,97s:0.75,96s,95s,87s,86s:0.75,85s,84s:0.5,76s,75s:0.75,74s,65s,64s:0.75,63s,54s,53s,43s,ATo:0.5,A9o-A2o,KQo:0.5,KJo:0.75,KTo-K5o,QJo-Q7o,JTo-J7o,T9o,T8o,T7o:0.5,98o,97o:0.5,87o,86o:0.25,76o,65o:0.5,54o:0.25"
+      }
+    },
+
+    {
+      "scenario": "vs_3bet", "hero": "UTG", "villain": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "KK+,QQ:0.5,AKs,AKo:0.5,A5s:0.5,A4s:0.25",
+        "call": "QQ:0.5,JJ,TT,99:0.5,AQs,AJs,ATs:0.5,KQs,KJs:0.5,QJs:0.5,JTs:0.5,AKo:0.5,AQo:0.5"
+      }
+    },
+    {
+      "scenario": "vs_3bet", "hero": "CO", "villain": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "KK+,QQ:0.5,AKs,AKo:0.75,A5s:0.5,A4s:0.5",
+        "call": "QQ:0.5,JJ,TT,99,88:0.5,77:0.25,AQs,AJs,ATs,A9s:0.25,KQs,KJs,KTs:0.5,QJs,QTs:0.5,JTs,T9s:0.5,98s:0.25,AKo:0.25,AQo,AJo:0.25,KQo:0.25"
+      }
+    },
+    {
+      "scenario": "vs_3bet", "hero": "BTN", "villain": "SB",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.25,AKs,AKo,AQs:0.25,A5s:0.5,A4s:0.5,A3s:0.25",
+        "call": "JJ:0.75,TT-55,44:0.5,AQs:0.75,AJs-A6s,A5s:0.5,A4s:0.5,A3s:0.5,A2s:0.5,KJs+,KTs,K9s:0.5,QJs,QTs,Q9s:0.5,JTs,J9s:0.5,T9s,T8s:0.5,98s,87s,76s,65s:0.5,54s:0.5,AQo,AJo,ATo:0.5,KQo,KJo:0.5"
+      }
+    },
+    {
+      "scenario": "vs_3bet", "hero": "BTN", "villain": "BB",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "raise": "QQ+,JJ:0.25,AKs,AKo:0.75,AQs:0.25,A5s:0.5,A4s:0.25",
+        "call": "JJ:0.75,TT-44,33:0.5,22:0.5,AQs:0.75,AJs-A6s,A5s:0.5,A4s:0.75,A3s:0.5,A2s:0.5,KQs,KJs,KTs,K9s:0.75,K8s:0.25,QJs,QTs,Q9s:0.75,JTs,J9s:0.75,T9s,T8s:0.5,98s,97s:0.25,87s,76s,65s:0.75,54s:0.5,AKo:0.25,AQo,AJo,ATo:0.5,KQo,KJo:0.5,QJo:0.25"
+      }
+    },
+
+    {
+      "scenario": "vs_4bet", "hero": "BTN", "villain": "CO",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "allin": "KK+,QQ:0.5,AKs,AKo:0.5",
+        "call": "QQ:0.5,JJ:0.75,TT:0.25,AKo:0.5,AQs:0.75,AJs:0.25,KQs:0.25,A5s:0.25"
+      }
+    },
+    {
+      "scenario": "vs_4bet", "hero": "SB", "villain": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "allin": "QQ+,JJ:0.25,AKs,AKo:0.75",
+        "call": "JJ:0.5,TT:0.25,AKo:0.25,AQs:0.5,KQs:0.25"
+      }
+    },
+    {
+      "scenario": "vs_4bet", "hero": "BB", "villain": "BTN",
+      "source": {"type": "approximate", "label": "Approximate seed chart"},
+      "ranges": {
+        "allin": "QQ+,JJ:0.25,AKs,AKo:0.75,A5s:0.25",
+        "call": "JJ:0.5,TT:0.25,AKo:0.25,AQs:0.5,AJs:0.25,KQs:0.25"
+      }
+    }
+  ]
+}

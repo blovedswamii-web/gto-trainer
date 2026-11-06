@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Dark-only UI. Action colours were validated with the dataviz palette checker against the
+   chart surface (#161a21): adjacent pairs clear the CVD and normal-vision floors for every
+   action set that can appear together (preflop: fold/call/raise/allin; postflop:
+   check/bet-small/bet-big/allin and fold/call/raise/allin). Segments are also separated by
+   2px gaps and always labelled in tooltips/legends, so colour is never the only channel. */
+@theme {
+  --color-surface-0: #0d1015;
+  --color-surface-1: #161a21;
+  --color-surface-2: #1e232c;
+  --color-surface-3: #2a303b;
+  --color-ink-1: #eef0f3;
+  --color-ink-2: #b9bfca;
+  --color-ink-3: #8a919e;
+  --color-act-fold: #3987e5;
+  --color-act-call: #199e70;
+  --color-act-raise: #d95926;
+  --color-act-allin: #9085e9;
+  --color-act-bet-small: #c98500;
+  --color-act-bet-big: #d55181;
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-critical: #d03b3b;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-surface-0);
+  color: var(--color-ink-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.card-surface {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-surface-3);
+  border-radius: 0.75rem;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-act-fold);
+  outline-offset: 2px;
+}
