@@ -99,3 +99,18 @@ def test_api_spots_and_detail() -> None:
     r = client.post("/api/ranges/parse", json={"text": "77+, ATs+, KQo"}).json()
     assert r["combos"] == 76 and r["normalized"] == "77+,ATs+,KQo"
     assert client.post("/api/ranges/parse", json={"text": "XYZ"}).status_code == 422
+
+
+def test_history_never_folds_a_player_twice() -> None:
+    c = build_context(FORMATS["6max_100bb"], "vs_4bet", "BTN", "CO")
+    steps = [(h.position, h.action) for h in c.history]
+    assert steps == [
+        ("UTG", "fold"),
+        ("HJ", "fold"),
+        ("CO", "raise"),
+        ("BTN", "3bet"),
+        ("SB", "fold"),
+        ("BB", "fold"),
+        ("CO", "4bet"),
+    ]
+    assert [a.label for a in c.actions][:2] == ["Fold", "Call 9bb"]

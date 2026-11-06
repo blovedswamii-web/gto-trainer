@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import routes_spots
+from ..db import session as db_session
+from . import routes_drill, routes_spots
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    db_session.configure()  # create tables before the first (possibly concurrent) request
+    yield
+
 
 app = FastAPI(
-    title="GTO Trainer", version="0.1.0", description="Local-first Texas Hold'em GTO training API"
+    lifespan=lifespan,
+    title="GTO Trainer",
+    version="0.1.0",
+    description="Local-first Texas Hold'em GTO training API",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -17,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(routes_spots.router)
+app.include_router(routes_drill.router)
 
 
 @app.get("/api/health")

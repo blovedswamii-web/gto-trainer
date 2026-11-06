@@ -40,12 +40,21 @@ def build_context(
     contrib["BB"] = 1.0
     hist: list[HistoryStep] = []
 
+    folded: set[str] = set()
+
     def fold_between(start: str, stop: str) -> None:
-        """Everyone strictly between start and stop (preflop order, wrapping) folds."""
+        """Everyone still in the hand strictly between start and stop (wrapping) folds."""
         i = (pos.index(start) + 1) % len(pos)
         while pos[i] != stop:
-            hist.append(HistoryStep(position=pos[i], action="fold"))
+            if pos[i] not in folded:
+                hist.append(HistoryStep(position=pos[i], action="fold"))
+                folded.add(pos[i])
             i = (i + 1) % len(pos)
+
+    def fold_before(p: str) -> None:
+        for q in pos[: pos.index(p)]:
+            hist.append(HistoryStep(position=q, action="fold"))
+            folded.add(q)
 
     def raise_to(p: str, size: float, kind: str) -> None:
         contrib[p] = size
@@ -55,8 +64,7 @@ def build_context(
     reach_spot: tuple[str, str, str | None, str] | None = None
     continue_spot: tuple[str, str, str | None, tuple[str, ...]] | None = None
     if scenario == "rfi":
-        for p in pos[: pos.index(hero)]:
-            hist.append(HistoryStep(position=p, action="fold"))
+        fold_before(hero)
         size = fmt.open_size(hero)
         actions = [
             ActionDef(id="fold", label="Fold"),
@@ -67,15 +75,14 @@ def build_context(
         assert villain is not None
         if pos.index(villain) >= pos.index(hero):
             raise ValueError(f"{villain} cannot open before {hero} acts")
-        for p in pos[: pos.index(villain)]:
-            hist.append(HistoryStep(position=p, action="fold"))
+        fold_before(villain)
         o = fmt.open_size(villain)
         raise_to(villain, o, "raise")
         fold_between(villain, hero)
         tb = fmt.three_bet_size(villain, hero)
         actions = [
             ActionDef(id="fold", label="Fold"),
-            ActionDef(id="call", label=f"Call {o:g}bb", size_bb=o),
+            ActionDef(id="call", label=f"Call {o - contrib[hero]:g}bb", size_bb=o),
             ActionDef(id="raise", label=f"3-bet to {tb:g}bb", size_bb=tb),
         ]
         title = f"{hero} vs {villain} open"
@@ -83,8 +90,7 @@ def build_context(
         continue_spot = ("vs_3bet", villain, hero, ("call", "raise"))
     elif scenario == "vs_3bet":
         assert villain is not None
-        for p in pos[: pos.index(hero)]:
-            hist.append(HistoryStep(position=p, action="fold"))
+        fold_before(hero)
         o = fmt.open_size(hero)
         raise_to(hero, o, "raise")
         fold_between(hero, villain)
@@ -94,7 +100,7 @@ def build_context(
         fb = fmt.four_bet_size(hero, villain)
         actions = [
             ActionDef(id="fold", label="Fold"),
-            ActionDef(id="call", label=f"Call {tb:g}bb", size_bb=tb),
+            ActionDef(id="call", label=f"Call {tb - contrib[hero]:g}bb", size_bb=tb),
             ActionDef(id="raise", label=f"4-bet to {fb:g}bb", size_bb=fb),
         ]
         title = f"{hero} open, {villain} 3-bets"
@@ -104,8 +110,7 @@ def build_context(
         continue_spot = ("vs_4bet", villain, hero, ("call", "allin"))
     elif scenario == "vs_4bet":
         assert villain is not None
-        for p in pos[: pos.index(villain)]:
-            hist.append(HistoryStep(position=p, action="fold"))
+        fold_before(villain)
         o = fmt.open_size(villain)
         raise_to(villain, o, "raise")
         fold_between(villain, hero)
@@ -116,7 +121,7 @@ def build_context(
         raise_to(villain, fb, "4bet")
         actions = [
             ActionDef(id="fold", label="Fold"),
-            ActionDef(id="call", label=f"Call {fb:g}bb", size_bb=fb),
+            ActionDef(id="call", label=f"Call {fb - contrib[hero]:g}bb", size_bb=fb),
             ActionDef(id="allin", label=f"5-bet all-in ({fmt.stack_bb:g}bb)", size_bb=fmt.stack_bb),
         ]
         title = f"{hero} 3-bet vs {villain}, facing a 4-bet"

@@ -98,3 +98,37 @@ export interface ParsedRange {
   percent: number;
   normalized: string;
 }
+
+export interface PreflopDeal {
+  spot: SpotSummary;
+  history: HistoryStep[];
+  pot_bb: number;
+  to_call_bb: number;
+  actions: ActionDef[];
+  hero_cards: string[];
+  hand_class: string;
+  combo: string;
+  reason: string;
+}
+
+export type GradeName = "best" | "good" | "minor" | "mistake";
+
+export interface GradeOut {
+  grade: GradeName;
+  chosen: string;
+  chosen_freq: number;
+  best_action: string;
+  best_freq: number;
+  freq_error: number;
+  ev_loss: number | null;
+  explanation: string;
+  points: number;
+}
+
+export interface PreflopFeedback {
+  grade: GradeOut;
+  combo_freqs: Record<string, number>;
+  equity_vs_villain: number | null;
+  detail: SpotDetail;
+  decision_id: number | null;
+}
