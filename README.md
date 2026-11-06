@@ -41,6 +41,7 @@ The SQLite database lives at `backend/data/trainer.db`. Delete it to reset your 
 | **Equity & odds** | Hand/range vs range equity (exact enumeration when cheap, Monte Carlo with standard error otherwise). Pot odds, MDF, bluff break-even and river value:bluff. A pot-odds / MDF / bluff drill that is logged with your stats. |
 | **Progress** | Accuracy, frequency error and EV loss. Rolling charts. Accuracy by position, street, spot type and hand class. **Top leaks** in plain English (e.g. *"You over-fold BB vs BTN open with suited gappers — 4 of 5 decisions off; the solution mostly plays call (100%)"*). Recent decisions. |
 | **Range editor** | Paint a range with 100/75/50/25% brushes or type notation, then compare it against any chart action. You get overlap, Jaccard, over- and under-included hands, and a diverging difference heatmap. Quiz mode hides the answer. Ranges can be saved. |
+| **Hand review** | Import PokerStars/GGPoker cash histories (paste or `.txt` files; a synthetic sample is built in). Every hero decision is mapped to a spot and graded, and the biggest deviations are listed first. The hand view shows the action timeline, the solution's mix for each decision, and the full range. Real-play decisions feed the progress page ("Real hands") and leak mining, and mistakes are queued for spaced-repetition drills. |
 
 ---
 
@@ -348,6 +349,42 @@ earlier ones.
 
 ---
 
+## Hand-history review
+
+The parser lives in `training/hand_history.py` and the review in `training/review.py`.
+PokerStars and GGPoker share one line-oriented parser, and amounts are converted to big
+blinds. Positions are assigned clockwise from the small blind and named the way the 6-max
+format names that many players. For example, 5-handed has no UTG and first-in is "HJ".
+This keeps the number of players behind correct, which is what an opening range depends on.
+
+**Preflop.** A state machine classifies each hero decision:
+
+| Situation | Spot |
+|---|---|
+| Unopened pot | RFI |
+| Single open | vs open, or BB defence |
+| Hero opened and faces a 3-bet | vs 3-bet |
+| Hero 3-bet and faces a 4-bet | vs 4-bet (raising = the 5-bet jam) |
+
+The decision is graded exactly like a drill. Everything else is listed as **not scored, with
+the reason**: limped and multiway pots, squeezes, 5-bet wars, heads-up or 7+ handed tables,
+tournaments, irregular blinds, effective stacks under 40bb, and spots with no loaded
+strategy. Off-model sizes and stack depths are graded but annotated.
+
+**Postflop.** A hand is graded only if it went heads-up to a flop that is a **suit
+permutation** of a solved spot, with the same pot type and positions:
+- The line is walked through the solved tree, with bet sizes mapped to the nearest
+  modelled size by pot fraction.
+- Hero's hand is relabelled through the permutation.
+- The turn must be one of the solver's representative turn cards, up to the flop's suit
+  symmetries. River play isn't stored.
+
+With four solved flops this is rare for real hands. The review says so rather than
+guessing.
+
+Imported hands are deduplicated by site + hand id. Scored decisions are logged with
+`mode="review"`; on an existing database the new `hand_ref` column is added automatically.
+
 ## Grading, scores, spaced repetition, leaks
 
 **Mixed-strategy grading** (`training/grading.py`). At equilibrium, every action with
@@ -402,7 +439,6 @@ bonus), so practice concentrates where mistakes actually happen.
 
 ## Roadmap (stretch goals, not built)
 
-- Hand-history import (PokerStars/GG) with a review mode that flags the biggest deviations.
 - ICM / push-fold charts.
 - Anki export of drill items.
 - Solver speed-ups: batch river subtrees across boards and Numba-compile the hot loops,

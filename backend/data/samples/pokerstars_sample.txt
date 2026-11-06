@@ -1,0 +1,274 @@
+PokerStars Hand #250000000001:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:15:03 ET
+Table 'Synthetic I' 6-max Seat #3 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($50.00 in chips)
+Seat 3: Hero ($50.00 in chips)
+Seat 4: Villain4 ($50.00 in chips)
+Seat 5: Villain5 ($50.00 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Villain4: posts small blind $0.25
+Villain5: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Kc 9d]
+Villain6: folds
+Villain1: folds
+Villain2: folds
+Hero: raises $0.75 to $1.25
+Villain4: folds
+Villain5: folds
+Uncalled bet ($0.75) returned to Hero
+Hero collected $1.25 from pot
+Hero: doesn't show hand
+*** SUMMARY ***
+Total pot $1.25 | Rake $0
+Seat 3: Hero (button) collected ($1.25)
+
+
+
+PokerStars Hand #250000000002:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:16:10 ET
+Table 'Synthetic I' 6-max Seat #1 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($50.00 in chips)
+Seat 3: Hero ($50.75 in chips)
+Seat 4: Villain4 ($49.75 in chips)
+Seat 5: Villain5 ($49.50 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Villain2: posts small blind $0.25
+Hero: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [9h 6h]
+Villain4: folds
+Villain5: folds
+Villain6: folds
+Villain1: raises $0.75 to $1.25
+Villain2: folds
+Hero: folds
+Uncalled bet ($0.75) returned to Villain1
+Villain1 collected $1.25 from pot
+*** SUMMARY ***
+Total pot $1.25 | Rake $0
+
+
+
+PokerStars Hand #250000000003:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:17:44 ET
+Table 'Synthetic I' 6-max Seat #3 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($50.00 in chips)
+Seat 3: Hero ($50.25 in chips)
+Seat 4: Villain4 ($49.75 in chips)
+Seat 5: Villain5 ($50.00 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Villain4: posts small blind $0.25
+Villain5: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Ad Qc]
+Villain6: folds
+Villain1: folds
+Villain2: raises $0.75 to $1.25
+Hero: raises $2.50 to $3.75
+Villain4: folds
+Villain5: folds
+Villain2: calls $2.50
+*** FLOP *** [Jh 8d 3c]
+Villain2: checks
+Hero: bets $2.75
+Villain2: folds
+Uncalled bet ($2.75) returned to Hero
+Hero collected $8.25 from pot
+*** SUMMARY ***
+Total pot $8.25 | Rake $0
+
+
+
+PokerStars Hand #250000000004:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:19:02 ET
+Table 'Synthetic I' 6-max Seat #3 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($46.25 in chips)
+Seat 3: Hero ($54.75 in chips)
+Seat 4: Villain4 ($49.75 in chips)
+Seat 5: Villain5 ($49.50 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Villain4: posts small blind $0.25
+Villain5: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [As Kd]
+Villain6: folds
+Villain1: folds
+Villain2: folds
+Hero: raises $0.75 to $1.25
+Villain4: folds
+Villain5: calls $0.75
+*** FLOP *** [Kh 7c 2s]
+Villain5: checks
+Hero: bets $0.90
+Villain5: calls $0.90
+*** TURN *** [Kh 7c 2s] [9c]
+Villain5: checks
+Hero: bets $3.40
+Villain5: folds
+Uncalled bet ($3.40) returned to Hero
+Hero collected $4.55 from pot
+*** SUMMARY ***
+Total pot $4.55 | Rake $0
+
+
+
+PokerStars Hand #250000000005:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:20:30 ET
+Table 'Synthetic I' 6-max Seat #4 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($46.25 in chips)
+Seat 3: Hero ($57.40 in chips)
+Seat 4: Villain4 ($49.50 in chips)
+Seat 5: Villain5 ($47.80 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Villain5: posts small blind $0.25
+Villain6: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Kd Th]
+Villain1: folds
+Villain2: folds
+Hero: raises $0.75 to $1.25
+Villain4: raises $2.50 to $3.75
+Villain5: folds
+Villain6: folds
+Hero: calls $2.50
+*** FLOP *** [Qs 9s 4d]
+Hero: checks
+Villain4: bets $2.80
+Hero: folds
+Uncalled bet ($2.80) returned to Villain4
+Villain4 collected $8.25 from pot
+*** SUMMARY ***
+Total pot $8.25 | Rake $0
+
+
+
+PokerStars Hand #250000000006:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:21:51 ET
+Table 'Synthetic I' 6-max Seat #6 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($46.25 in chips)
+Seat 3: Hero ($53.65 in chips)
+Seat 4: Villain4 ($53.75 in chips)
+Seat 5: Villain5 ($47.55 in chips)
+Seat 6: Villain6 ($49.50 in chips)
+Villain1: posts small blind $0.25
+Villain2: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [5c 5d]
+Hero: calls $0.50
+Villain4: folds
+Villain5: folds
+Villain6: folds
+Villain1: folds
+Villain2: checks
+*** FLOP *** [Ah Td 6s]
+Villain2: checks
+Hero: checks
+*** TURN *** [Ah Td 6s] [2c]
+Villain2: bets $0.75
+Hero: folds
+Uncalled bet ($0.75) returned to Villain2
+Villain2 collected $1.25 from pot
+*** SUMMARY ***
+Total pot $1.25 | Rake $0
+
+
+
+PokerStars Hand #250000000007:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:23:15 ET
+Table 'Synthetic I' 6-max Seat #1 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($47.00 in chips)
+Seat 3: Hero ($53.15 in chips)
+Seat 4: Villain4 ($53.75 in chips)
+Seat 5: Villain5 ($47.55 in chips)
+Seat 6: Villain6 ($49.50 in chips)
+Villain2: posts small blind $0.25
+Hero: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Jc 7c]
+Villain4: folds
+Villain5: raises $0.75 to $1.25
+Villain6: calls $1.25
+Villain1: folds
+Villain2: folds
+Hero: calls $0.75
+*** FLOP *** [Jd 5h 2c]
+Hero: checks
+Villain5: checks
+Villain6: checks
+*** TURN *** [Jd 5h 2c] [8s]
+Hero: bets $2.00
+Villain5: folds
+Villain6: folds
+Uncalled bet ($2.00) returned to Hero
+Hero collected $4.00 from pot
+*** SUMMARY ***
+Total pot $4.00 | Rake $0
+
+
+
+PokerStars Hand #250000000008:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:24:40 ET
+Table 'Synthetic I' 6-max Seat #3 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($50.00 in chips)
+Seat 3: Hero ($50.00 in chips)
+Seat 4: Villain4 ($50.00 in chips)
+Seat 5: Villain5 ($50.00 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Villain4: posts small blind $0.25
+Villain5: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Ks Kh]
+Villain6: folds
+Villain1: folds
+Villain2: raises $0.75 to $1.25
+Hero: raises $2.50 to $3.75
+Villain4: folds
+Villain5: folds
+Villain2: raises $4.50 to $8.25
+Hero: raises $41.75 to $50 and is all-in
+Villain2: calls $41.75 and is all-in
+*** FLOP *** [Qd 7h 3s]
+*** TURN *** [Qd 7h 3s] [2d]
+*** RIVER *** [Qd 7h 3s 2d] [9c]
+*** SHOW DOWN ***
+Villain2: shows [Ac Ad] (a pair of Aces)
+Hero: shows [Ks Kh] (a pair of Kings)
+Villain2 collected $100.75 from pot
+*** SUMMARY ***
+Total pot $100.75 | Rake $0
+
+
+
+PokerStars Hand #250000000009:  Hold'em No Limit ($0.25/$0.50 USD) - 2026/10/01 20:26:02 ET
+Table 'Synthetic I' 6-max Seat #2 is the button
+Seat 1: Villain1 ($50.00 in chips)
+Seat 2: Villain2 ($50.00 in chips)
+Seat 3: Hero ($50.00 in chips)
+Seat 4: Villain4 ($50.00 in chips)
+Seat 5: Villain5 ($50.00 in chips)
+Seat 6: Villain6 ($50.00 in chips)
+Hero: posts small blind $0.25
+Villain4: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Ac Qd]
+Villain5: folds
+Villain6: folds
+Villain1: folds
+Villain2: raises $0.75 to $1.25
+Hero: raises $4.75 to $5.00
+Villain4: folds
+Villain2: calls $3.75
+*** FLOP *** [Qh 8s 4c]
+Hero: bets $3.50
+Villain2: calls $3.50
+*** TURN *** [Qh 8s 4c] [2h]
+Hero: checks
+Villain2: checks
+*** RIVER *** [Qh 8s 4c 2h] [7d]
+Hero: bets $8.00
+Villain2: folds
+Uncalled bet ($8.00) returned to Hero
+Hero collected $17.50 from pot
+*** SUMMARY ***
+Total pot $17.50 | Rake $0

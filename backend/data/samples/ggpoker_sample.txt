@@ -1,0 +1,103 @@
+Poker Hand #HD100000001: Hold'em No Limit ($0.25/$0.5) - 2026/10/02 21:03:11
+Table 'NLHGold3' 6-max Seat #5 is the button
+Seat 1: Hero ($50 in chips)
+Seat 2: 7f2a1c ($48.5 in chips)
+Seat 3: 9b8d3e ($50 in chips)
+Seat 4: 1a2b3c ($62 in chips)
+Seat 5: 4d5e6f ($50 in chips)
+Seat 6: 0c9d8e ($50 in chips)
+0c9d8e: posts small blind $0.25
+Hero: posts big blind $0.5
+*** HOLE CARDS ***
+Dealt to Hero [Ah 5h]
+Dealt to 7f2a1c 
+Dealt to 9b8d3e 
+Dealt to 1a2b3c 
+Dealt to 4d5e6f 
+Dealt to 0c9d8e 
+7f2a1c: folds
+9b8d3e: folds
+1a2b3c: folds
+4d5e6f: raises $0.75 to $1.25
+0c9d8e: folds
+Hero: raises $4.5 to $5
+4d5e6f: folds
+Uncalled bet ($3.75) returned to Hero
+*** SHOWDOWN ***
+Hero collected $2.75 from pot
+*** SUMMARY ***
+Total pot $2.75 | Rake $0 | Jackpot $0 | Bingo $0 | Fortune $0 | Tax $0
+Seat 1: Hero (big blind) won ($2.75)
+
+
+
+Poker Hand #HD100000002: Hold'em No Limit ($0.25/$0.5) - 2026/10/02 21:04:40
+Table 'NLHGold3' 6-max Seat #6 is the button
+Seat 1: Hero ($51.5 in chips)
+Seat 2: 7f2a1c ($48.5 in chips)
+Seat 3: 9b8d3e ($50 in chips)
+Seat 4: 1a2b3c ($62 in chips)
+Seat 5: 4d5e6f ($48.75 in chips)
+Seat 6: 0c9d8e ($49.75 in chips)
+Hero: posts small blind $0.25
+7f2a1c: posts big blind $0.5
+*** HOLE CARDS ***
+Dealt to Hero [7s 6s]
+Dealt to 7f2a1c 
+Dealt to 9b8d3e 
+Dealt to 1a2b3c 
+Dealt to 4d5e6f 
+Dealt to 0c9d8e 
+9b8d3e: folds
+1a2b3c: folds
+4d5e6f: raises $0.75 to $1.25
+0c9d8e: folds
+Hero: calls $1
+7f2a1c: folds
+*** FLOP *** [Td 9c 2h]
+Hero: checks
+4d5e6f: bets $1.2
+Hero: calls $1.2
+*** TURN *** [Td 9c 2h] [5d]
+Hero: checks
+4d5e6f: checks
+*** RIVER *** [Td 9c 2h 5d] [Kh]
+Hero: checks
+4d5e6f: bets $2.5
+Hero: folds
+Uncalled bet ($2.5) returned to 4d5e6f
+*** SHOWDOWN ***
+4d5e6f collected $5.4 from pot
+*** SUMMARY ***
+Total pot $5.4 | Rake $0 | Jackpot $0 | Bingo $0 | Fortune $0 | Tax $0
+
+
+
+Poker Hand #HD100000003: Hold'em No Limit ($0.25/$0.5) - 2026/10/02 21:05:58
+Table 'NLHGold3' 6-max Seat #3 is the button
+Seat 1: Hero ($49.05 in chips)
+Seat 2: 7f2a1c ($48 in chips)
+Seat 3: 9b8d3e ($50 in chips)
+Seat 4: 1a2b3c ($62 in chips)
+Seat 5: 4d5e6f ($51.15 in chips)
+Seat 6: 0c9d8e ($49.75 in chips)
+1a2b3c: posts small blind $0.25
+4d5e6f: posts big blind $0.5
+*** HOLE CARDS ***
+Dealt to Hero [Qc Td]
+Dealt to 7f2a1c 
+Dealt to 9b8d3e 
+Dealt to 1a2b3c 
+Dealt to 4d5e6f 
+Dealt to 0c9d8e 
+0c9d8e: folds
+Hero: raises $0.75 to $1.25
+7f2a1c: folds
+9b8d3e: folds
+1a2b3c: folds
+4d5e6f: folds
+Uncalled bet ($0.75) returned to Hero
+*** SHOWDOWN ***
+Hero collected $1.25 from pot
+*** SUMMARY ***
+Total pot $1.25 | Rake $0 | Jackpot $0 | Bingo $0 | Fortune $0 | Tax $0

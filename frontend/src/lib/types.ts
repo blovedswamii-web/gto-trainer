@@ -237,3 +237,105 @@ export interface ExploitNode extends PfNodeBase {
   exploit: StrategyAgg;
   reached_in_exploit: boolean;
 }
+
+export interface ReviewGrade {
+  grade: GradeName;
+  chosen: string;
+  chosen_freq: number;
+  best_action: string;
+  best_freq: number;
+  freq_error: number;
+  ev_loss: number | null;
+  explanation: string;
+  points: number;
+}
+
+export interface ReviewDecision {
+  street: string;
+  scenario: string;
+  hero_pos: string;
+  villain_pos: string | null;
+  action_text: string;
+  action: string | null;
+  scored: boolean;
+  reason: string;
+  spot_id: string | null;
+  node: string;
+  board: string;
+  freqs: Record<string, number> | null;
+  labels: Record<string, string>;
+  category: string;
+  pot_bb: number;
+  notes: string[];
+  grade: ReviewGrade | null;
+}
+
+export interface HandRow {
+  id: number;
+  site: string;
+  hand_id: string;
+  played_at: string | null;
+  stakes: string;
+  hero_cards: string;
+  hero_position: string;
+  board: string;
+  net_bb: number;
+  effective_bb: number;
+  skip_reason: string | null;
+  n_decisions: number;
+  n_scored: number;
+  worst_grade: string;
+  freq_error: number;
+}
+
+export interface TimelineItem {
+  kind: "street" | "action";
+  street: string;
+  cards?: string[];
+  player?: string;
+  position?: string;
+  hero?: boolean;
+  text?: string;
+}
+
+export interface HandDetail extends HandRow {
+  postflop_note: string | null;
+  decisions: ReviewDecision[];
+  raw: string;
+  timeline: TimelineItem[];
+  hero: string | null;
+}
+
+export interface Deviation {
+  hand_ref: number;
+  hand_id: string;
+  site: string;
+  played_at: string | null;
+  hero_cards: string;
+  hero_position: string;
+  villain_position: string | null;
+  street: string;
+  scenario: string;
+  spot_id: string;
+  board: string;
+  chosen: string;
+  best: string;
+  chosen_freq: number;
+  best_freq: number;
+  grade: GradeName;
+  freq_error: number;
+  ev_loss_bb: number | null;
+  category: string;
+  freqs: Record<string, number>;
+}
+
+export interface ImportReport {
+  parsed: number;
+  imported: number;
+  duplicates: number;
+  parse_errors: { hand: string; error: string }[];
+  skipped_hands: Record<string, number>;
+  unscored: Record<string, number>;
+  scored_decisions: number;
+  flagged_decisions: number;
+}

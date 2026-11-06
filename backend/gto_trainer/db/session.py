@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import Engine, create_engine, select
+from sqlalchemy import Engine, create_engine, inspect, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from .. import config
@@ -41,8 +41,23 @@ def _configure_locked(path: Path | str | None) -> Engine:
         poolclass=StaticPool if target == ":memory:" else None,
     )
     Base.metadata.create_all(_engine)
+    _migrate(_engine)
     _factory = sessionmaker(_engine, expire_on_commit=False)
     return _engine
+
+
+# Columns added after the first release: (table, column, SQL type). create_all() only creates
+# missing *tables*, so existing databases get new columns through ALTER TABLE.
+_ADDED_COLUMNS = [("decisions", "hand_ref", "INTEGER REFERENCES hands(id)")]
+
+
+def _migrate(engine: Engine) -> None:
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table, column, sql_type in _ADDED_COLUMNS:
+            cols = {c["name"] for c in insp.get_columns(table)}
+            if column not in cols:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {sql_type}"))
 
 
 @contextmanager

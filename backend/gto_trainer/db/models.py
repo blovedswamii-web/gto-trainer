@@ -59,7 +59,8 @@ class Decision(Base):
     ev_loss_pct_pot: Mapped[float | None] = mapped_column(Float, nullable=True)
     source_type: Mapped[str] = mapped_column(String(16))
     response_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    reason: Mapped[str] = mapped_column(String(8), default="new")  # new | review
+    reason: Mapped[str] = mapped_column(String(8), default="new")  # new | review | hh
+    hand_ref: Mapped[int | None] = mapped_column(ForeignKey("hands.id"), nullable=True)
 
 
 class SrsItem(Base):
@@ -83,6 +84,35 @@ class SrsItem(Base):
     due_at: Mapped[datetime] = mapped_column(default=utcnow)
     last_grade: Mapped[str] = mapped_column(String(8), default="")
     updated_at: Mapped[datetime] = mapped_column(default=utcnow)
+
+
+class HandRecord(Base):
+    """An imported hand history and its review (decisions are also logged as mode="review")."""
+
+    __tablename__ = "hands"
+    __table_args__ = (UniqueConstraint("user_id", "uid"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    uid: Mapped[str] = mapped_column(String(80))  # "<site>:<hand id>"
+    site: Mapped[str] = mapped_column(String(16))
+    hand_id: Mapped[str] = mapped_column(String(64))
+    played_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    stakes: Mapped[str] = mapped_column(String(32), default="")
+    hero_cards: Mapped[str] = mapped_column(String(8), default="")
+    hero_position: Mapped[str] = mapped_column(String(8), default="")
+    board: Mapped[str] = mapped_column(String(24), default="")
+    net_bb: Mapped[float] = mapped_column(Float, default=0.0)
+    effective_bb: Mapped[float] = mapped_column(Float, default=0.0)
+    skip_reason: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    postflop_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    n_decisions: Mapped[int] = mapped_column(Integer, default=0)
+    n_scored: Mapped[int] = mapped_column(Integer, default=0)
+    worst_grade: Mapped[str] = mapped_column(String(8), default="")
+    freq_error: Mapped[float] = mapped_column(Float, default=0.0)  # sum over scored decisions
+    review_json: Mapped[str] = mapped_column(Text, default="[]")
+    raw: Mapped[str] = mapped_column(Text)
+    imported_at: Mapped[datetime] = mapped_column(default=utcnow)
 
 
 class CustomRange(Base):
