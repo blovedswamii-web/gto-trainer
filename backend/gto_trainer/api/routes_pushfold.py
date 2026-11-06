@@ -179,6 +179,7 @@ def drill_answer(body: DrillAnswerIn) -> dict[str, Any]:
                 hero_position=pos[hero],
                 villain_position=pos[villain] if villain is not None else None,
                 street="preflop",
+                node=st.code(),
                 hand=body.hand,
                 hand_class=body.hand_class,
                 hand_category=preflop_category(body.hand_class),

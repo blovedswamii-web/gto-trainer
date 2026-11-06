@@ -97,6 +97,22 @@ class PushFoldSetup:
             out[n - 2], out[n - 1] = self.sb, self.bb
         return out
 
+    def code(self) -> str:
+        """Compact, reversible text form (fits the decision log's ``node`` column)."""
+        return (
+            f"s={','.join(f'{x:g}' for x in self.stacks)};"
+            f"p={','.join(f'{x:g}' for x in self.payouts)};a={self.ante:g}"
+        )
+
+    @classmethod
+    def from_code(cls, code: str) -> PushFoldSetup:
+        parts = dict(kv.split("=", 1) for kv in code.split(";"))
+
+        def nums(t: str) -> tuple[float, ...]:
+            return tuple(float(x) for x in t.split(",") if x)
+
+        return cls(nums(parts["s"]), nums(parts.get("p", "")), float(parts.get("a", "0")))
+
     def key(self) -> str:
         blob = json.dumps([self.stacks, self.payouts, self.ante, self.sb, self.bb])
         return hashlib.sha1(blob.encode()).hexdigest()[:16]

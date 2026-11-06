@@ -43,6 +43,7 @@ The SQLite database lives at `backend/data/trainer.db`. Delete it to reset your 
 | **Range editor** | Paint a range with 100/75/50/25% brushes or type notation, then compare it against any chart action. You get overlap, Jaccard, over- and under-included hands, and a diverging difference heatmap. Quiz mode hides the answer. Ranges can be saved. |
 | **Hand review** | Import PokerStars/GGPoker cash histories (paste or `.txt` files; a synthetic sample is built in). Every hero decision is mapped to a spot and graded, and the biggest deviations are listed first. The hand view shows the action timeline, the solution's mix for each decision, and the full range. Real-play decisions feed the progress page ("Real hands") and leak mining, and mistakes are queued for spaced-repetition drills. |
 | **Push/fold (ICM)** | Short-stack shove/call equilibria for 2–9 players with ICM (or chip EV) payoffs and antes. Presets range from heads-up and 6-max Nash to an SNG bubble and an MTT final table. Shows shove and call charts per position with the EV margin of every hand, ICM equity, bubble factors, and a graded drill on the table you set up. |
+| **Anki** | Export to an Anki deck (`.apkg`): **My leaks** (every spot and hand you were graded wrong on, across drills, real hands and push/fold), **Preflop charts** (close decisions or whole ranges), **Postflop** (solver mix per hand category at each flop decision) or **Push/fold** for a table. A sample card is previewed before download. |
 
 ---
 
@@ -410,6 +411,30 @@ the published Nash values, with exploitability below 0.001bb. ICM makes bubble c
 tighter than chip EV, and antes widen shoves; both are tested. Stacks above 20bb get a
 warning, because real strategies there use smaller raises.
 
+## Anki export
+
+`export/anki.py` uses [genanki](https://github.com/kerrickstaley/genanki) to build a real
+`.apkg`, which Anki desktop, AnkiDroid and AnkiMobile all import.
+
+**Answer side.** Every card shows:
+- the solution's action mix, with EVs where the source has them
+- the strategy's source tag (approximate seed chart, imported, or solver plus exploitability)
+- the full range as an SVG grid
+
+Each SVG is one content-addressed media file shared by all cards of a spot.
+
+**Stable IDs.** Note GUIDs come from stable keys (deck type, spot, node, hand). Re-exporting
+and importing again updates existing cards and keeps their review history.
+
+**What goes in each deck:**
+
+| Deck | What's in it |
+|---|---|
+| My leaks | Minor and mistake decisions grouped by (spot, node, hand class), so one card can say "flagged 3×, you chose fold ×3". Push/fold decisions store their table setup so the card can show the stacks. |
+| Preflop charts | "Close decisions": hands that are mixed or sit on a range boundary. Or every hand that reaches the spot. |
+| Postflop | One card per hand category per flop decision. Nodes where the whole range takes one action are skipped. |
+| Push/fold | Hands that are mixed or within 15% of the largest EV margin. |
+
 ## Grading, scores, spaced repetition, leaks
 
 **Mixed-strategy grading** (`training/grading.py`). At equilibrium, every action with
@@ -449,7 +474,7 @@ bonus), so practice concentrates where mistakes actually happen.
 
 ## Quality
 
-- `make test`: about 130 pytest tests. Coverage:
+- `make test`: 145 pytest tests. Coverage:
   - evaluator (exhaustive), equity vs known values and brute force
   - range parsing and formatting round-trip, combo counting with blockers
   - strategy loading, importer
@@ -462,8 +487,7 @@ bonus), so practice concentrates where mistakes actually happen.
   surface. Grid segments are separated by 2px gaps, and every colour is backed by a label
   or tooltip.
 
-## Roadmap (stretch goals, not built)
+## Roadmap
 
-- Anki export of drill items.
 - Solver speed-ups: batch river subtrees across boards and Numba-compile the hot loops,
   which would allow more runouts and turn/river raise sizes.

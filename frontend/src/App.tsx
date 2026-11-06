@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import AnkiExport from "./pages/AnkiExport";
 import EquityTools from "./pages/EquityTools";
 import HandReview from "./pages/HandReview";
 import PostflopTrainer from "./pages/PostflopTrainer";
@@ -17,6 +18,7 @@ const NAV = [
   { to: "/editor", label: "Range editor" },
   { to: "/pushfold", label: "Push/fold (ICM)" },
   { to: "/review", label: "Hand review" },
+  { to: "/anki", label: "Anki" },
 ];
 
 export default function App() {
@@ -55,6 +57,7 @@ export default function App() {
           <Route path="/editor" element={<RangeEditor />} />
           <Route path="/review" element={<HandReview />} />
           <Route path="/pushfold" element={<PushFold />} />
+          <Route path="/anki" element={<AnkiExport />} />
         </Routes>
       </main>
       <footer className="border-t border-surface-3 px-4 py-2 text-center text-[11px] text-ink-3">

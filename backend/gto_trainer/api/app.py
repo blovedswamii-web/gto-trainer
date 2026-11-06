@@ -12,6 +12,7 @@ from ..db import session as db_session
 from . import (
     routes_drill,
     routes_exploit,
+    routes_export,
     routes_postflop,
     routes_pushfold,
     routes_review,
@@ -47,6 +48,7 @@ app.include_router(routes_tools.router)
 app.include_router(routes_exploit.router)
 app.include_router(routes_review.router)
 app.include_router(routes_pushfold.router)
+app.include_router(routes_export.router)
 
 
 @app.get("/api/health")
