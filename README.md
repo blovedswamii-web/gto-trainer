@@ -251,6 +251,11 @@ How the best response shifts when villain is *not* playing equilibrium:
    | `bet_more` | check → smallest bet |
 
    Rows stay probability distributions, and every other node stays at equilibrium.
+
+   Decisions **facing an all-in are excluded by default** (there's an opt-in per
+   tendency). A uniform "calls too much" applied to 20×-pot jams makes villain call off
+   his stack with air. The resulting "best response" just jams the nuts and checks
+   everything else, which is technically correct and practically useless.
 3. Run the solver's **best-response pass** for hero, recording per-hand action values at
    every hero node. The BR strategy is their argmax. Re-evaluating with that strategy
    reproduces the BR value exactly, and that is checked on every run.
