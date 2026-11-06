@@ -37,7 +37,7 @@ The SQLite database lives at `backend/data/trainer.db`. Delete it to reset your 
 |---|---|
 | **Ranges** | 13×13 grid per spot (RFI, vs open, BB defence, vs 3-bet, vs 4-bet). Each cell is a split-colour bar: widths are the action frequencies, height is the share of the cell that reaches the node. Hover shows exact combos and frequencies; click shows each suit combo. The side panel shows % played, combos per action and value:bluff for raises. A table view is available. |
 | **Preflop drill** | Deals a spot and a hand, you pick fold/call/raise (keys `1-3`, `F/C/R/A`), then you get a grade, the solution's mix for your exact hand, your hand's all-in equity vs villain's range, and the full grid. Filter by spot type or position. Choose "close decisions" (mixed and boundary hands) or "realistic" dealing. Mistakes come back through spaced repetition. |
-| **Postflop** | *Drill*: a decision node from a solved spot plus a hand in range. Graded on frequency **and EV loss** (bb and % pot) from the solver. *Explore*: walk the solved tree, with the strategy by **hand category** (sets, top pair good kicker, flush draws…), the reach-weighted grid, and EV per category. |
+| **Postflop** | *Drill*: a decision node from a solved spot plus a hand in range. Graded on frequency **and EV loss** (bb and % pot) from the solver. *Explore*: walk the solved tree, with the strategy by **hand category** (sets, top pair good kicker, flush draws…), the reach-weighted grid, and EV per category. *Exploit mode*: give villain tendencies (over-folds to c-bets, calling station, never check-raises …) and see your best response, its EV gain over GTO, and what it costs if villain adapts. |
 | **Equity & odds** | Hand/range vs range equity (exact enumeration when cheap, Monte Carlo with standard error otherwise). Pot odds, MDF, bluff break-even and river value:bluff. A pot-odds / MDF / bluff drill that is logged with your stats. |
 | **Progress** | Accuracy, frequency error and EV loss. Rolling charts. Accuracy by position, street, spot type and hand class. **Top leaks** in plain English (e.g. *"You over-fold BB vs BTN open with suited gappers — 4 of 5 decisions off; the solution mostly plays call (100%)"*). Recent decisions. |
 | **Range editor** | Paint a range with 100/75/50/25% brushes or type notation, then compare it against any chart action. You get overlap, Jaccard, over- and under-included hands, and a diverging difference heatmap. Quiz mode hides the answer. Ranges can be saved. |
@@ -94,7 +94,8 @@ backend/data/
   strategies/seed/*.json      approximate seed pack (23 spots)
   strategies/imported/*.json  your imports (override seed)
   preflop_equity.npz          169×169 class-vs-class equity (Monte Carlo, ±~1%)
-  solutions/<spot>.{json,npz} cached postflop solutions
+  solutions/<spot>.{json,npz} cached postflop solutions (flop/turn nodes, committed)
+  solutions/<spot>.strategy.npz  full per-node strategies for exploit mode (gitignored)
 ```
 
 `GameFormat` in `gto_trainer/config.py` makes the game format **data**: player count, stack
@@ -231,6 +232,47 @@ Rerun with more iterations or a tighter target:
 cd backend && .venv/bin/python -m gto_trainer.solver.precompute --force --iterations 800 --target 0.2
 ```
 
+### Exploit mode (`solver/exploit.py`)
+
+How the best response shifts when villain is *not* playing equilibrium:
+
+1. Rebuild the solved game from the cache. It's deterministic: the same config, board and
+   hand lists give the same tree and matrices. Then load every node's equilibrium
+   strategy, rivers included, from `<spot>.strategy.npz`.
+2. Edit villain's strategy with **tendencies**. Each one moves a fraction `x` of each hand's
+   probability mass between actions at matching nodes, filtered by street:
+
+   | Tendency | Mass moved |
+   |---|---|
+   | `fold_more` | call/raise → fold |
+   | `call_more` | fold → call |
+   | `raise_less` | raise → call |
+   | `bet_less` | bet → check |
+   | `bet_more` | check → smallest bet |
+
+   Rows stay probability distributions, and every other node stays at equilibrium.
+3. Run the solver's **best-response pass** for hero, recording per-hand action values at
+   every hero node. The BR strategy is their argmax. Re-evaluating with that strategy
+   reproduces the BR value exactly, and that is checked on every run.
+
+What it reports, as hero EV per hand:
+
+| Value | What it means |
+|---|---|
+| **Equilibrium** | GTO vs GTO |
+| **GTO vs this villain** | What his leaks give you without adjusting |
+| **Best response** | The maximum. The difference from the line above is what adjusting is worth. |
+| **If villain adapts** | Villain's best response to *your* BR. A pure exploit is maximally greedy and maximally brittle, and this number shows how brittle. |
+
+You also get the biggest adjustments (weighted by how often you reach the node) and a
+GTO-vs-BR comparison by hand category and grid at any node.
+
+It runs in ~1s per query, plus a few seconds the first time a spot is rebuilt. Caveats:
+- It runs inside the same abstracted game as the solution.
+- It assumes villain plays *exactly* the edited strategy.
+- The full strategy files (~17 MB) are gitignored. `make precompute` creates them, and
+  re-solves any spot that lacks one.
+
 ### Adding or changing postflop spots
 
 Edit `SPOTS` in `solver/postflop.py`. Each spot sets:
@@ -357,8 +399,6 @@ bonus), so practice concentrates where mistakes actually happen.
 
 - Hand-history import (PokerStars/GG) with a review mode that flags the biggest deviations.
 - ICM / push-fold charts.
-- Opponent-exploit mode: set villain tendencies, compute a best response with the existing
-  BR pass, and show the shift from equilibrium.
 - Anki export of drill items.
 - Solver speed-ups: batch river subtrees across boards and Numba-compile the hot loops,
   which would allow more runouts and turn/river raise sizes.

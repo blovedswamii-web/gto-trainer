@@ -9,7 +9,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..db import session as db_session
-from . import routes_drill, routes_postflop, routes_spots, routes_stats, routes_tools
+from . import (
+    routes_drill,
+    routes_exploit,
+    routes_postflop,
+    routes_spots,
+    routes_stats,
+    routes_tools,
+)
 
 
 @asynccontextmanager
@@ -35,6 +42,7 @@ app.include_router(routes_drill.router)
 app.include_router(routes_stats.router)
 app.include_router(routes_postflop.router)
 app.include_router(routes_tools.router)
+app.include_router(routes_exploit.router)
 
 
 @app.get("/api/health")

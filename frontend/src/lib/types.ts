@@ -200,3 +200,40 @@ export interface PfFeedback {
   category: string;
   node: PfNode;
 }
+
+export interface StrategyAgg {
+  overall: Record<string, number>;
+  range_combos: number;
+  categories: PfCategory[];
+  grid: CellData[];
+}
+
+export interface ExploitShift {
+  path: string;
+  street: string;
+  mass: number;
+  action: string;
+  label: string;
+  gto_freq: number;
+  exploit_freq: number;
+  score: number;
+}
+
+export interface ExploitRun {
+  key: string;
+  hero_position: string;
+  villain_position: string;
+  starting_pot: number;
+  values: Record<string, number>;
+  values_pct_pot: Record<string, number>;
+  modified_nodes: Record<string, number>;
+  shifts: ExploitShift[];
+  start_path: string;
+}
+
+export interface ExploitNode extends PfNodeBase {
+  role: "hero" | "villain";
+  gto: StrategyAgg;
+  exploit: StrategyAgg;
+  reached_in_exploit: boolean;
+}

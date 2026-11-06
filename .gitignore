@@ -15,3 +15,6 @@ node_modules/
 frontend/dist/
 # OS
 .DS_Store
+
+# Full per-node strategies for exploit mode (~17 MB); regenerate with `make precompute`
+backend/data/solutions/*.strategy.npz

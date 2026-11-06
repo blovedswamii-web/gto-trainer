@@ -162,6 +162,7 @@ class SolveReport:
     player_nodes: int = 0
     hands: tuple[int, int] = (0, 0)
     input_source: str = "approximate"
+    tree: dict[str, Any] = field(default_factory=dict)  # the TreeConfig actually solved
 
 
 def solve_spot(
@@ -197,12 +198,58 @@ def solve_spot(
     s.evaluate()
     src = "approximate" if "approximate" in (src0, src1) else src0
     rep = SolveReport(
-        d.id, s.t, time.perf_counter() - t0, "dcfr", pct, hist, tb.n_player_nodes, game.n, src
+        d.id,
+        s.t,
+        time.perf_counter() - t0,
+        "dcfr",
+        pct,
+        hist,
+        tb.n_player_nodes,
+        game.n,
+        src,
+        asdict(cfg),
     )
     return s, rep, (h0, h1)
 
 
 # ---------------------------------------------------------------------------- persistence
+
+
+def walk_player_nodes(root: Node) -> list[tuple[str, PlayerNode]]:
+    """Every decision node with its path, in a deterministic depth-first order.
+
+    The order depends only on the tree structure, so a game rebuilt from the same config and
+    hands yields the same sequence -- that is how full strategies are stored and restored.
+    """
+    out: list[tuple[str, PlayerNode]] = []
+
+    def go(node: Node, path: str) -> None:
+        if isinstance(node, PlayerNode):
+            out.append((path, node))
+            for a, ch in zip(node.actions, node.children, strict=True):
+                go(ch, f"{path}/{a}" if path else a)
+        elif isinstance(node, ChanceNode):
+            for br in node.branches:
+                go(br.node, f"{path}/{card_to_str(br.card)}")
+
+    go(root, "")
+    return out
+
+
+def tree_config_from_dict(d: dict[str, Any]) -> TreeConfig:
+    def street(x: dict[str, Any]) -> StreetSizes:
+        return StreetSizes(
+            bets=tuple(x["bets"]),
+            oop_bets=None if x["oop_bets"] is None else tuple(x["oop_bets"]),
+            raises=tuple(x["raises"]),
+            max_raises=x["max_raises"],
+            allin=x["allin"],
+        )
+
+    rest = {k: v for k, v in d.items() if k not in ("flop", "turn", "river")}
+    return TreeConfig(
+        flop=street(d["flop"]), turn=street(d["turn"]), river=street(d["river"]), **rest
+    )
 
 
 def _walk_recorded(
@@ -262,7 +309,7 @@ def save_solution(
             }
         )
     meta = {
-        "spot": {**asdict(d), "tree": asdict(d.tree)},
+        "spot": {**asdict(d), "tree": rep.tree or asdict(d.tree)},
         "report": asdict(rep),
         "hands": [[combo_to_str(int(c)) for c in h.combos] for h in hands],
         "weights": [[float(x) for x in h.weights] for h in hands],
@@ -272,6 +319,13 @@ def save_solution(
     }
     (out_dir / f"{d.id}.json").write_text(json.dumps(meta))
     np.savez_compressed(out_dir / f"{d.id}.npz", **arrays)  # type: ignore[arg-type]
+    # Full average strategy of every node (rivers included), quantised to 1/255. The node
+    # explorer never needs it; exploit mode does, to compute best responses.
+    full = {
+        f"q{i}": np.round(average_strategy(nd) * 255).astype(np.uint8)
+        for i, (_, nd) in enumerate(walk_player_nodes(s.g.root))
+    }
+    np.savez_compressed(out_dir / f"{d.id}.strategy.npz", **full)  # type: ignore[arg-type]
     load_solution.cache_clear()
     return out_dir / f"{d.id}.json"
 
@@ -304,6 +358,8 @@ class Solution:
     combos: list[np.ndarray]  # combo ids per player
     nodes: dict[str, NodeData]
     chance: dict[str, list[str]]
+    directory: Path = SOLUTIONS_DIR
+    weights: list[list[float]] = field(default_factory=list)
     categories: dict[str, list[str]] = field(default_factory=dict)  # board key -> per-hand
 
     def positions(self) -> tuple[str, str]:
@@ -346,7 +402,16 @@ def load_solution(spot_id: str, directory: Path = SOLUTIONS_DIR) -> Solution | N
                 reach=z[f"r{k}"].astype(np.float64),
                 opp_reach=z[f"o{k}"].astype(np.float64),
             )
-    return Solution(meta["spot"], meta["report"], meta["hands"], combos, nodes, meta["chance"])
+    return Solution(
+        meta["spot"],
+        meta["report"],
+        meta["hands"],
+        combos,
+        nodes,
+        meta["chance"],
+        directory,
+        meta["weights"],
+    )
 
 
 def available_solutions(directory: Path = SOLUTIONS_DIR) -> list[str]:

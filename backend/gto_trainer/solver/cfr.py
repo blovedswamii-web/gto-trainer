@@ -96,6 +96,8 @@ class PlayerNode:
     strat_sum: Arr = field(default_factory=lambda: np.zeros((0, 0), dtype=DT))
     ev: Arr | None = None  # (n_actor, A) action values, filled by evaluate()
     reach: tuple[Arr, Arr] | None = None  # own-strategy reach of each player at this node
+    br_q: Arr | None = None  # (n_actor, A) best-response action values (best_response_value)
+    br_ro: Arr | None = None  # opponent reach seen by that best-response pass
 
 
 Node = FoldNode | ShowdownNode | ChanceNode | PlayerNode
@@ -148,7 +150,9 @@ class Solver:
         alpha: float = 1.5,
         beta: float = 0.0,
         gamma: float = 2.0,
+        train: bool = True,
     ) -> None:
+        """``train=False`` skips regret arrays: for evaluating stored strategies only."""
         self.g = game
         self.algo = algo
         self.alpha, self.beta, self.gamma = alpha, beta, gamma
@@ -158,7 +162,7 @@ class Solver:
         ]
         for nd in self.player_nodes:
             shape = (game.n[nd.player], len(nd.actions))
-            nd.regret = np.zeros(shape, dtype=DT)
+            nd.regret = np.zeros(shape if train else (0, len(nd.actions)), dtype=DT)
             nd.strat_sum = np.zeros(shape, dtype=DT)
         # Player-specific views so every terminal is a single contiguous matvec.
         self._compat = (
@@ -237,23 +241,37 @@ class Solver:
                 self._cfr(self.g.root, p, rp.astype(DT), ro.astype(DT))
 
     # ------------------------------------------------------------------ best response
-    def _br(self, node: Node, p: int, ro: Arr) -> Arr:
+    def _br(self, node: Node, p: int, ro: Arr, record: bool = False) -> Arr:
         if isinstance(node, (FoldNode, ShowdownNode)):
             return self._terminal(node, p, ro)
         if isinstance(node, ChanceNode):
             o = 1 - p
-            return self._chance(node, p, lambda br: self._br(br.node, p, ro * br.live[o]))
+            return self._chance(node, p, lambda br: self._br(br.node, p, ro * br.live[o], record))
         if not ro.any():
             return np.zeros(self.g.n[p], dtype=DT)
         if node.player == p:
-            vals = np.stack([self._br(ch, p, ro) for ch in node.children], axis=1)
+            vals = np.stack([self._br(ch, p, ro, record) for ch in node.children], axis=1)
+            if record:
+                node.br_q, node.br_ro = vals, ro.copy()
             out: Arr = vals.max(axis=1)
             return out
         sigma = average_strategy(node)
         v = np.zeros(self.g.n[p], dtype=DT)
         for a, ch in enumerate(node.children):
-            v += self._br(ch, p, ro * sigma[:, a])
+            v += self._br(ch, p, ro * sigma[:, a], record)
         return v
+
+    def best_response_value(self, p: int, record: bool = False) -> float:
+        """Expected value (chips per deal) of a best response by ``p`` to the other player's
+        average strategy. With ``record``, every node of ``p`` keeps ``br_q``/``br_ro`` so the
+        best-response *strategy* can be read off afterwards (argmax of ``br_q``)."""
+        if record:
+            for nd in self.player_nodes:
+                if nd.player == p:
+                    nd.br_q = nd.br_ro = None
+        w = self.g.weights
+        v = self._br(self.g.root, p, w[1 - p].astype(DT), record)
+        return float(w[p].astype(np.float64) @ v) / self.normaliser()
 
     def normaliser(self) -> float:
         """Total probability mass of compatible deals: sum_ij w0_i w1_j compat_ij."""

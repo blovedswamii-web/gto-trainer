@@ -62,71 +62,66 @@ def _history(sol: Solution, path: str) -> list[dict[str, str]]:
     return out
 
 
-def node_view(sol: Solution, path: str) -> dict[str, Any]:
-    nd = sol.nodes[path]
-    oop, ip = sol.positions()
-    actor_pos = oop if nd.actor == 0 else ip
-    combos = sol.combos[nd.actor]
-    reach = nd.reach
-    cats = sol.hand_categories(nd.actor, nd.board)
-    labels = sol.class_labels(nd.actor)
+def strategy_view(
+    sol: Solution,
+    actor: int,
+    board: list[str],
+    actions: list[str],
+    strategy: np.ndarray,
+    reach: np.ndarray,
+    ev: np.ndarray | None,
+) -> dict[str, Any]:
+    """Reach-weighted aggregation of a per-hand strategy: overall mix, hand categories and
+    the 169-cell grid. Used for solutions and for exploit-mode comparisons alike."""
+    combos = sol.combos[actor]
+    cats = sol.hand_categories(actor, board)
     total = float(reach.sum())
-    overall = {
-        a: float((reach * nd.strategy[:, i]).sum() / total) if total else 0.0
-        for i, a in enumerate(nd.actions)
-    }
 
+    def mix(idx: np.ndarray | list[int], arr: np.ndarray) -> dict[str, float]:
+        w = reach[idx]
+        m = float(w.sum())
+        return {a: float((w * arr[idx, i]).sum() / m) for i, a in enumerate(actions)}
+
+    overall = mix(np.arange(len(reach)), strategy) if total > 1e-9 else dict.fromkeys(actions, 0.0)
     by_cat: dict[str, list[int]] = {}
     for i, c in enumerate(cats):
         by_cat.setdefault(c, []).append(i)
     cat_rows = []
     for c in CATEGORIES:
         idx = by_cat.get(c)
-        if not idx:
-            continue
-        w = reach[idx]
-        m = float(w.sum())
-        if m <= 1e-9:
+        if not idx or float(reach[idx].sum()) <= 1e-9:
             continue
         cat_rows.append(
             {
                 "category": c,
-                "combos": m,
-                "freqs": {
-                    a: float((w * nd.strategy[idx, i]).sum() / m) for i, a in enumerate(nd.actions)
-                },
-                "ev": {a: float((w * nd.ev[idx, i]).sum() / m) for i, a in enumerate(nd.actions)},
+                "combos": float(reach[idx].sum()),
+                "freqs": mix(idx, strategy),
+                "ev": mix(idx, ev) if ev is not None else {},
             }
         )
-
     cls = np.array([COMBO_CLASS[c] for c in combos])
     grid = []
     for k, lab in enumerate(CLASS_LABELS):
         sel = np.flatnonzero(cls == k)
-        w = reach[sel] if len(sel) else np.zeros(0)
-        m = float(w.sum())
+        m = float(reach[sel].sum()) if len(sel) else 0.0
         n_class = 6 if len(lab) == 2 else (4 if lab.endswith("s") else 12)
+        live = m > 1e-9
         grid.append(
             {
                 "label": lab,
                 "combos": m,
                 "reach": min(1.0, m / n_class),
-                "freqs": (
-                    {
-                        a: float((w * nd.strategy[sel, i]).sum() / m)
-                        for i, a in enumerate(nd.actions)
-                    }
-                    if m > 1e-9
-                    else {}
-                ),
-                "ev": (
-                    {a: float((w * nd.ev[sel, i]).sum() / m) for i, a in enumerate(nd.actions)}
-                    if m > 1e-9
-                    else None
-                ),
+                "freqs": mix(sel, strategy) if live else {},
+                "ev": mix(sel, ev) if live and ev is not None else None,
             }
         )
+    return {"overall": overall, "range_combos": total, "categories": cat_rows, "grid": grid}
 
+
+def node_structure(sol: Solution, path: str) -> dict[str, Any]:
+    """Everything about a node except strategies: board, pot, history, navigation."""
+    nd = sol.nodes[path]
+    oop, ip = sol.positions()
     children: dict[str, Any] = {}
     for a in nd.actions:
         child = f"{path}/{a}" if path else a
@@ -136,7 +131,6 @@ def node_view(sol: Solution, path: str) -> dict[str, Any]:
             children[a] = {"kind": "chance", "cards": sol.chance[child], "path": child}
         else:
             children[a] = {"kind": "terminal"}
-    _ = labels
     return {
         "spot_id": sol.spot["id"],
         "title": sol.spot["title"],
@@ -148,17 +142,20 @@ def node_view(sol: Solution, path: str) -> dict[str, Any]:
         "to_call": nd.to_call,
         "stack": nd.stack,
         "actor": "OOP" if nd.actor == 0 else "IP",
-        "actor_position": actor_pos,
+        "actor_position": oop if nd.actor == 0 else ip,
         "villain_position": ip if nd.actor == 0 else oop,
         "history": _history(sol, path),
         "actions": [{"id": a, "label": action_label(a)} for a in nd.actions],
-        "overall": overall,
-        "range_combos": total,
-        "categories": cat_rows,
-        "grid": grid,
         "children": children,
         "source": source_tag(sol).model_dump(),
     }
+
+
+def node_view(sol: Solution, path: str) -> dict[str, Any]:
+    nd = sol.nodes[path]
+    view = node_structure(sol, path)
+    view.update(strategy_view(sol, nd.actor, nd.board, nd.actions, nd.strategy, nd.reach, nd.ev))
+    return view
 
 
 def combo_detail(sol: Solution, path: str, combo: int) -> dict[str, Any]:

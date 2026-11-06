@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ExploitLab } from "../components/ExploitLab";
 import { GradeCard, SessionBar, keyToAction } from "../components/Feedback";
 import { Board, NodeStrategy, PfHistory } from "../components/Postflop";
 import { ErrorNote, Panel, Pill, PlayingCard, SourceBadge } from "../components/ui";
@@ -304,18 +305,26 @@ function Drill({ spots }: { spots: PfSpot[] }) {
 
 export default function PostflopTrainer() {
   const spots = useApi<PfSpot[]>("/postflop/spots");
-  const [tab, setTab] = useState<"drill" | "explore">("drill");
+  const [tab, setTab] = useState<"drill" | "explore" | "exploit">("drill");
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1">
         <Pill active={tab === "drill"} onClick={() => setTab("drill")}>Drill</Pill>
         <Pill active={tab === "explore"} onClick={() => setTab("explore")}>Explore solutions</Pill>
+        <Pill active={tab === "exploit"} onClick={() => setTab("exploit")}>Exploit mode</Pill>
         <span className="ml-3 text-xs text-ink-3">
           Heads-up subgames solved locally with DCFR; see the source badge for exploitability and abstraction.
         </span>
       </div>
       <ErrorNote error={spots.error} />
-      {spots.data && (tab === "drill" ? <Drill spots={spots.data} /> : <Explorer spots={spots.data} />)}
+      {spots.data &&
+        (tab === "drill" ? (
+          <Drill spots={spots.data} />
+        ) : tab === "explore" ? (
+          <Explorer spots={spots.data} />
+        ) : (
+          <ExploitLab spots={spots.data} />
+        ))}
     </div>
   );
 }

@@ -45,7 +45,13 @@ def main(argv: list[str] | None = None) -> None:
     if not preflop_equity.TABLE_PATH.exists():
         print("building preflop equity table ...", flush=True)
         preflop_equity.save_table()
-    todo = [s for s in a.spots if a.force or not (SOLUTIONS_DIR / f"{s}.json").exists()]
+
+    def cached(s: str) -> bool:  # older caches lack the full strategy file exploit mode needs
+        return all(
+            (SOLUTIONS_DIR / f"{s}{ext}").exists() for ext in (".json", ".npz", ".strategy.npz")
+        )
+
+    todo = [s for s in a.spots if a.force or not cached(s)]
     if not todo:
         print("all postflop solutions cached (use --force to re-solve)")
         return
