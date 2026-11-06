@@ -16,7 +16,7 @@ Node 20+ and `make`.
 
 ```bash
 make install      # backend venv + frontend node_modules
-make precompute   # preflop equity table + solve the 4 postflop spots (~6 min, 4 processes)
+make precompute   # preflop equity table + solve the 4 postflop spots (~23 min, all cores)
 make dev          # API on :8000 + UI on http://localhost:5173
 ```
 
@@ -223,7 +223,10 @@ matching splits on exact ties, and both converge to the same game value.
 |---|---|---|---|
 | Old default tree, 8 turns × 5 rivers | 40 | 0.61 s/iteration | **0.11 s/iteration** |
 | Old tree, all 49 turns × 8 rivers | 392 | (~6 s, not run) | **0.72 s/iteration** |
-| New default: two sizes per street + turn raise, all turns × 4 rivers | 196 | — | ~1.5 s/iteration |
+| New default: two sizes per street + turn raise, all turns × 4 rivers | 196 | — (87k decision nodes) | **1.6 s/iteration** |
+
+A best-response pass on the new default takes 1.1s, down from 3.4s before strategy
+averaging got its own kernel.
 
 ### Card abstraction (`solver/abstraction.py`)
 
@@ -262,17 +265,23 @@ by hand category") and to aggregate leaks.
 A best-response pass against the average strategy gives
 `(BR₀ + BR₁)/2 / starting pot × 100` = **% of pot**. This is the number on the source badge.
 
-A typical `make precompute` run:
+A `make precompute` run on an M1 Pro takes 23 minutes in total. Each spot stops at 0.5% of
+pot or 400 iterations:
 
-| Spot | Exploitability | Iterations | Time |
-|---|---|---|---|
-| SB vs BTN 3-bet pot, Q84r | 0.28% pot | 150 | ~40s |
-| BTN vs BB single-raised pots (K72r, A93ss, 987tt) | ~0.4–0.5% pot | 400 | ~6 min (in parallel) |
+| Spot | Decision nodes | River boards | Iterations | Exploitability | Time |
+|---|---|---|---|---|---|
+| BTN vs BB SRP, K72r | 87,036 | 196 | 375 | 0.49% pot | 10.1 min |
+| BTN vs BB SRP, A93ss | 63,948 | 144 (36 turn orbits) | 300 | 0.46% pot | 6.5 min |
+| BTN vs BB SRP, 987tt | 63,948 | 144 (36 turn orbits) | 275 | 0.50% pot | 5.4 min |
+| SB vs BTN 3BP, Q84r | 47,452 | 196 | 125 | 0.44% pot | 38 s |
+
+The solution files are local and gitignored: about 275 MB for the four spots, including the
+full strategies that exploit mode uses.
 
 Rerun with more iterations or a tighter target:
 
 ```bash
-cd backend && .venv/bin/python -m gto_trainer.solver.precompute --force --iterations 800 --target 0.2
+cd backend && .venv/bin/python -m gto_trainer.solver.precompute --force --iterations 800 --target 0.25
 ```
 
 ### Exploit mode (`solver/exploit.py`)
@@ -315,8 +324,9 @@ What it reports, as hero EV per hand:
 You also get the biggest adjustments (weighted by how often you reach the node) and a
 GTO-vs-BR comparison by hand category and grid at any node.
 
-It takes a few seconds per query on the default trees, plus a few seconds the first time a
-spot is rebuilt. Caveats:
+On K72r a query takes about 5 seconds. The first one takes about 15 seconds, because it
+rebuilds the game and caches the tendency-independent equilibrium passes. The 3-bet pot
+takes under a second. Caveats:
 - It runs inside the same abstracted game as the solution.
 - It assumes villain plays *exactly* the edited strategy.
 - Solution files are local (gitignored) because they are tens of MB per spot.

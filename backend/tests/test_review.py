@@ -148,8 +148,12 @@ def test_store_dedupes_and_feeds_stats_and_srs() -> None:
         keys = {it.item_key for it in s.scalars(select(SrsItem)).all()}
     assert any("bb_defense.BB_vs_BTN" in k and "96s" in k for k in keys)  # real mistake -> drill
     devs = review_store.deviations()
-    assert devs[0]["grade"] == "mistake"
-    assert devs[0]["ev_loss_bb"] is not None  # the costly postflop mistake ranks first
+    order = {"mistake": 0, "minor": 1}
+    keys = [(order[str(d["grade"])], -round(float(d["freq_error"]), 2)) for d in devs]
+    assert keys == sorted(keys)  # mistakes first, then by frequency error
+    # the postflop turn mistake (graded in the isomorphic solved spot) carries an EV loss
+    assert any(d["street"] == "turn" and d["grade"] == "mistake" and d["ev_loss_bb"]
+               for d in devs)
     assert review_store.clear_all() == 12
     assert review_store.list_hands() == []
 
