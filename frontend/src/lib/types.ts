@@ -132,3 +132,71 @@ export interface PreflopFeedback {
   detail: SpotDetail;
   decision_id: number | null;
 }
+
+export interface PfSpot {
+  id: string;
+  title: string;
+  board: string;
+  pot_type: string;
+  oop: string;
+  ip: string;
+  solved: boolean;
+  source?: SourceTag;
+  pot?: number;
+  stack?: number;
+}
+
+export interface PfCategory {
+  category: string;
+  combos: number;
+  freqs: Record<string, number>;
+  ev: Record<string, number>;
+}
+
+export interface PfChild {
+  kind: "node" | "chance" | "terminal";
+  path?: string;
+  cards?: string[];
+}
+
+export interface PfNodeBase {
+  spot_id: string;
+  title: string;
+  pot_type: string;
+  path: string;
+  street: string;
+  board: string[];
+  pot: number;
+  to_call: number;
+  stack: number;
+  actor: "OOP" | "IP";
+  actor_position: string;
+  villain_position: string;
+  history: { position: string; action: string; kind: "card" | "action" }[];
+  actions: { id: string; label: string }[];
+  children: Record<string, PfChild>;
+  source: SourceTag;
+}
+
+export interface PfNode extends PfNodeBase {
+  overall: Record<string, number>;
+  range_combos: number;
+  categories: PfCategory[];
+  grid: CellData[];
+}
+
+export interface PfDeal extends PfNodeBase {
+  hero_cards: string[];
+  combo: string;
+  reason: string;
+}
+
+export interface PfFeedback {
+  grade: GradeOut;
+  ev_loss_pct_pot: number | null;
+  decision_id: number;
+  freqs: Record<string, number>;
+  ev: Record<string, number>;
+  category: string;
+  node: PfNode;
+}

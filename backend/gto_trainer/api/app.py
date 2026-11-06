@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..db import session as db_session
-from . import routes_drill, routes_spots, routes_stats
+from . import routes_drill, routes_postflop, routes_spots, routes_stats
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ app.add_middleware(
 app.include_router(routes_spots.router)
 app.include_router(routes_drill.router)
 app.include_router(routes_stats.router)
+app.include_router(routes_postflop.router)
 
 
 @app.get("/api/health")

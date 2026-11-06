@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import PostflopTrainer from "./pages/PostflopTrainer";
 import PreflopDrill from "./pages/PreflopDrill";
 import Progress from "./pages/Progress";
 import RangeViewer from "./pages/RangeViewer";
@@ -11,10 +12,6 @@ const NAV = [
   { to: "/progress", label: "Progress" },
   { to: "/editor", label: "Range editor" },
 ];
-
-function Placeholder({ name }: { name: string }) {
-  return <div className="p-8 text-ink-3">{name} — coming in a later phase.</div>;
-}
 
 export default function App() {
   return (
@@ -46,10 +43,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<RangeViewer />} />
           <Route path="/drill" element={<PreflopDrill />} />
-          <Route path="/postflop" element={<Placeholder name="Postflop trainer" />} />
-          <Route path="/tools" element={<Placeholder name="Equity & odds" />} />
+          <Route path="/postflop" element={<PostflopTrainer />} />
+          
           <Route path="/progress" element={<Progress />} />
-          <Route path="/editor" element={<Placeholder name="Range editor" />} />
+          
         </Routes>
       </main>
       <footer className="border-t border-surface-3 px-4 py-2 text-center text-[11px] text-ink-3">
