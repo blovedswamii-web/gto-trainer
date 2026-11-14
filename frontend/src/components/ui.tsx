@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import type { HistoryStep, SourceTag } from "../lib/types";
 
 /** Every strategy on screen carries its provenance. Approximate data is never styled as truth. */
@@ -150,5 +150,29 @@ export function PlayingCard({ card, size = "md" }: { card: string; size?: "sm" |
       <span>{rank}</span>
       <span className="text-[0.8em]">{sym[suit]}</span>
     </span>
+  );
+}
+
+/** Filter row that collapses behind a "Filters" button on narrow screens. */
+export function FilterDisclosure({ children, right }: { children: ReactNode; right?: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 md:hidden">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="rounded-md bg-surface-2 px-2.5 py-1 text-xs font-medium text-ink-2 hover:bg-surface-3"
+        >
+          Filters {open ? "▴" : "▾"}
+        </button>
+        <div className="ml-auto">{right}</div>
+      </div>
+      <div className={`${open ? "flex" : "hidden"} flex-wrap items-center gap-x-5 gap-y-2 md:flex`}>
+        {children}
+        <div className="ml-auto hidden md:block">{right}</div>
+      </div>
+    </div>
   );
 }

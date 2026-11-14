@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..config import GameFormat
-from .schemas import ActionDef, HistoryStep, Scenario
+from .schemas import ActionDef, HistoryStep, Scenario, SeatState, TableState
 
 
 @dataclass(frozen=True)
@@ -23,6 +23,7 @@ class SpotContext:
     reach_spot: tuple[str, str, str | None, str] | None
     # Villain's response spot to hero's aggression: (scenario, hero, villain, continuing actions)
     continue_spot: tuple[str, str, str | None, tuple[str, ...]] | None = None
+    table: TableState | None = None
 
 
 def spot_id(fmt_id: str, scenario: Scenario, hero: str, villain: str | None) -> str:
@@ -133,6 +134,25 @@ def build_context(
 
     pot = sum(contrib.values())
     to_call = max(contrib.values()) - contrib[hero]
+    last = {h.position: h.action for h in hist if h.action != "fold"}
+    table = TableState(
+        seats=[
+            SeatState(
+                position=p,
+                stack_bb=round(fmt.stack_bb - contrib[p], 2),
+                committed_bb=contrib[p],
+                folded=p in folded,
+                is_hero=p == hero,
+                is_actor=p == hero,
+                is_villain=p == villain,
+                last_action=last.get(p),
+            )
+            for p in pos
+        ],
+        dealer="BTN",
+        pot_bb=round(pot, 2),
+        to_call_bb=round(to_call, 2),
+    )
     return SpotContext(
         hist,
         round(pot, 2),
@@ -142,4 +162,5 @@ def build_context(
         villain_spot,
         reach_spot,
         continue_spot,
+        table,
     )

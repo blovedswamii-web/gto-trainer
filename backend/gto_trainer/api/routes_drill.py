@@ -10,7 +10,7 @@ from ..poker.cards import COMBO_CLASS, combo_from_str
 from ..poker.preflop_equity import class_equity_vs_range
 from ..poker.ranges import class_weights
 from ..strategies.loader import get_registry
-from ..strategies.schemas import ActionDef, HistoryStep, SpotDetail, SpotSummary
+from ..strategies.schemas import ActionDef, HistoryStep, SpotDetail, SpotSummary, TableState
 from ..training.grading import GradeResult, grade_decision
 from ..training.progress import record_preflop_decision
 from ..training.spots import Focus, deal_preflop
@@ -39,6 +39,7 @@ class PreflopDeal(BaseModel):
     hand_class: str
     combo: str
     reason: str
+    table: TableState | None = None
 
 
 class GradeOut(BaseModel):
@@ -113,6 +114,7 @@ def preflop_next(body: PreflopNextIn) -> PreflopDeal:
         hand_class=dealt.hand_class,
         combo=dealt.combo_str,
         reason=dealt.reason,
+        table=s.ctx.table,
     )
 
 

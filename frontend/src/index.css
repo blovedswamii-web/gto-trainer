@@ -56,3 +56,36 @@ textarea:focus-visible {
   outline: 2px solid var(--color-act-fold);
   outline-offset: 2px;
 }
+
+/* Poker table */
+:root {
+  --color-felt: #12382c;
+  --color-felt-rim: #3a2c1d;
+  --color-chip: #e3b341;
+  --color-chip-edge: #7a5c10;
+}
+
+@keyframes seat-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--color-act-call);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-act-call) 35%, transparent);
+  }
+}
+
+.seat-active {
+  box-shadow: 0 0 0 2px var(--color-act-call);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .seat-active {
+    animation: seat-pulse 1.6s ease-in-out infinite;
+  }
+  .chip-move {
+    transition:
+      left 0.35s ease,
+      top 0.35s ease;
+  }
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -23,7 +24,7 @@ def solution(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, str]:
         base.tree,
         turn_cards=2,
         river_cards=2,
-        flop=StreetSizes(bets=(0.5,), oop_bets=(0.5,), raises=(), max_raises=0),
+        flop=StreetSizes(bets=(0.5,), oop_bets=(0.5,), raises=(3.0,), max_raises=1),
         turn=StreetSizes(bets=(0.75,), raises=(), max_raises=0),
         river=StreetSizes(bets=(0.75,), raises=(), max_raises=0),
     )
@@ -59,6 +60,44 @@ def test_load_and_view(solution: tuple[Path, str]) -> None:
     assert len(turn_cards) == 2
     turn = pv.node_view(sol, f"check/check/{turn_cards[0]}")
     assert turn["street"] == "turn" and len(turn["board"]) == 4
+    tree = sol.spot["tree"]
+
+    def seats(v: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        t = v["table"]
+        assert t["board"] == v["board"] and t["pot_bb"] == v["pot"]
+        hero = [x for x in t["seats"] if x["is_hero"] and x["is_actor"]]
+        villain = [x for x in t["seats"] if x["is_villain"]]
+        assert len(hero) == 1 and len(villain) == 1
+        assert hero[0]["position"] == v["actor_position"]
+        assert hero[0]["stack_bb"] == pytest.approx(v["stack"])
+        assert villain[0]["committed_bb"] - hero[0]["committed_bb"] == pytest.approx(v["to_call"])
+        return hero[0], villain[0]
+
+    for v in (view, ip, turn):
+        hero, villain = seats(v)
+        assert hero["committed_bb"] == villain["committed_bb"] == 0
+        assert villain["stack_bb"] == pytest.approx(v["stack"])
+    # Facing a bet: the bettor's chips are in front of them and out of their stack.
+    bet = next(a["id"] for a in ip["actions"] if a["id"].startswith("bet"))
+    facing_bet = pv.node_view(sol, f"check/{bet}")
+    hero, villain = seats(facing_bet)
+    size = facing_bet["to_call"]
+    assert size > 0 and hero["committed_bb"] == 0
+    assert villain["committed_bb"] == pytest.approx(size) and villain["last_action"] == "bet"
+    assert villain["stack_bb"] == pytest.approx(tree["stack"] - size)
+    assert facing_bet["pot"] == pytest.approx(tree["starting_pot"] + size)
+    # Facing a raise: both players' street chips show, and stacks are net of them.
+    raise_ = next(a["id"] for a in facing_bet["actions"] if a["id"].startswith("raise"))
+    facing_raise = pv.node_view(sol, f"check/{bet}/{raise_}")
+    hero, villain = seats(facing_raise)
+    assert hero["committed_bb"] == pytest.approx(size) and hero["last_action"] == "bet"
+    assert villain["last_action"] == "raise"
+    assert villain["committed_bb"] == pytest.approx(size + facing_raise["to_call"])
+    assert villain["stack_bb"] == pytest.approx(tree["stack"] - villain["committed_bb"])
+    assert facing_raise["pot"] == pytest.approx(
+        tree["starting_pot"] + hero["committed_bb"] + villain["committed_bb"]
+    )
+    assert len(turn["table"]["board"]) == 4
 
 
 def test_drill_deal_and_grade(solution: tuple[Path, str]) -> None:

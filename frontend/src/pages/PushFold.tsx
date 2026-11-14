@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { ActionBar } from "../components/ActionBar";
 import { GradeCard, SessionBar } from "../components/Feedback";
+import { PokerTable, type TableResult } from "../components/PokerTable";
 import { HandGrid, Legend, totalCombos } from "../components/HandGrid";
-import { ErrorNote, Panel, Pill, PlayingCard, Stat } from "../components/ui";
+import { ErrorNote, Panel, Pill, Stat } from "../components/ui";
 import { type ActionMeta, pct } from "../lib/actions";
 import { api } from "../lib/api";
 import { useApi } from "../lib/hooks";
-import type { CellData, GradeOut } from "../lib/types";
+import type { CellData, GradeOut, TableState } from "../lib/types";
+import { useDrill } from "../lib/useDrill";
 
 interface Preset {
   id: string;
@@ -77,32 +80,61 @@ function cells(labels: string[], r: RangeOut, act: string): CellData[] {
   }));
 }
 
-function Drill({ setup, positions }: { setup: { stacks: number[]; payouts: number[]; ante: number }; positions: string[] }) {
-  const [deal, setDeal] = useState<Deal | null>(null);
-  const [ans, setAns] = useState<Answer | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [stats, setStats] = useState({ n: 0, points: 0, freqErr: 0 });
-  const next = useCallback(async () => {
-    setErr(null);
-    setAns(null);
-    try {
-      setDeal(await api.post<Deal>("/pushfold/drill/next", setup));
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
-  }, [setup]);
-  useEffect(() => {
-    void next();
-  }, [next]);
-  const answer = async (action: string) => {
-    if (!deal || ans) return;
-    const a = await api.post<Answer>("/pushfold/drill/answer", {
-      ...setup, kind: deal.kind, shover: deal.shover, caller: deal.caller, hand: deal.hand, hand_class: deal.hand_class, action,
-    });
-    setAns(a);
-    setStats((s) => ({ n: s.n + 1, points: s.points + a.grade.points, freqErr: s.freqErr + a.grade.freq_error }));
+/** Table for a push/fold deal, built from data the deal already carries. */
+function pushFoldTable(positions: string[], stacks: number[], ante: number, deal: Deal): TableState {
+  const n = positions.length;
+  const blind = (i: number) => (positions[i] === "BB" ? 1 : positions[i] === "SB" || (n === 2 && positions[i] === "BTN") ? 0.5 : 0);
+  const shover = deal.kind === "push" ? deal.hero : deal.shover;
+  const committed = positions.map((_, i) => (i === shover && deal.kind === "call" ? stacks[i]! : blind(i)));
+  const toCall =
+    deal.kind === "call"
+      ? Math.min(stacks[deal.hero]!, stacks[shover]!) - blind(deal.hero)
+      : Math.max(0, 1 - blind(deal.hero));
+  return {
+    seats: positions.map((p, i) => ({
+      position: p,
+      stack_bb: Math.max(0, stacks[i]! - committed[i]! - (i === shover && deal.kind === "call" ? 0 : ante)),
+      committed_bb: committed[i]!,
+      folded: i < deal.hero && i !== shover,
+      is_hero: i === deal.hero,
+      is_actor: i === deal.hero,
+      is_villain: deal.kind === "call" && i === shover,
+      last_action: deal.kind === "call" && i === shover ? "allin" : null,
+    })),
+    dealer: "BTN",
+    pot_bb: committed.reduce((x, y) => x + y, 0) + ante * n,
+    to_call_bb: toCall,
+    board: [],
   };
-  const metas = deal ? [deal.kind === "push" ? SHOVE : CALL, FOLD] : [];
+}
+
+function Drill({ setup, positions }: { setup: { stacks: number[]; payouts: number[]; ante: number }; positions: string[] }) {
+  const [preview, setPreview] = useState<number | null>(null);
+  const fetchNext = useCallback(() => api.post<Deal>("/pushfold/drill/next", setup), [setup]);
+  const submit = useCallback(
+    (deal: Deal, action: string) =>
+      api.post<Answer>("/pushfold/drill/answer", {
+        ...setup, kind: deal.kind, shover: deal.shover, caller: deal.caller, hand: deal.hand, hand_class: deal.hand_class, action,
+      }),
+    [setup],
+  );
+  const { deal, fb: ans, error: err, stats, actions: metas, next, answer } = useDrill<Deal, Answer>({
+    fetchNext,
+    submit,
+    actionsOf: useCallback((d: Deal) => [d.kind === "push" ? SHOVE : CALL, FOLD], []),
+    refetchOn: [setup],
+  });
+  const heroStack = deal ? deal.stacks[deal.hero]! : 0;
+  const sizeOf = (id: string) =>
+    !deal || id === "fold" ? null : id === "push" ? heroStack : Math.min(heroStack, deal.stacks[deal.shover]!);
+  const result: TableResult | null =
+    deal && ans
+      ? {
+          chosen: metas.find((a) => a.id === ans.grade.chosen) ?? metas[0]!,
+          chosenBb: sizeOf(ans.grade.chosen),
+          mix: metas.map((a) => ({ action: a, freq: ans.freqs[a.id] ?? 0 })),
+        }
+      : null;
   return (
     <Panel title="Drill this table" right={<SessionBar {...stats} />}>
       <ErrorNote error={err} />
@@ -120,24 +152,24 @@ function Drill({ setup, positions }: { setup: { stacks: number[]; payouts: numbe
             )}{" "}
             <span className="text-ink-3">Your stack {deal.stacks[deal.hero]}bb.</span>
           </div>
-          <div className="mb-3 flex items-center gap-4">
-            <div className="flex gap-1.5">
-              <PlayingCard card={deal.hand.slice(0, 2)} size="lg" />
-              <PlayingCard card={deal.hand.slice(2, 4)} size="lg" />
-            </div>
-            <div className="grid flex-1 grid-cols-2 gap-2">
-              {metas.map((a) => (
-                <button
-                  key={a.id}
-                  disabled={!!ans}
-                  onClick={() => void answer(a.id)}
-                  className="rounded-lg border-2 bg-surface-2 py-2.5 text-sm font-semibold hover:bg-surface-3 disabled:opacity-50"
-                  style={{ borderColor: a.color }}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
+          <div className="mb-3">
+            <PokerTable
+              table={pushFoldTable(positions, deal.stacks, setup.ante, deal)}
+              heroCards={[deal.hand.slice(0, 2), deal.hand.slice(2, 4)]}
+              heroBet={ans ? null : preview}
+              result={result}
+              canCall={metas.some((a) => a.id === "call")}
+              centre={ans && <GradeCard compact grade={ans.grade} freqs={ans.freqs} actions={metas} />}
+            >
+              <ActionBar
+                actions={metas}
+                columns={2}
+                disabled={!!ans}
+                onPick={(id) => void answer(id)}
+                sizeOf={sizeOf}
+                onPreview={setPreview}
+              />
+            </PokerTable>
           </div>
           {ans && (
             <div className="space-y-2">

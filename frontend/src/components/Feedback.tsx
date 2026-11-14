@@ -15,13 +15,25 @@ export function GradeCard({
   freqs,
   actions,
   extra,
+  compact = false,
 }: {
   grade: GradeOut;
   freqs: Record<string, number>;
   actions: ActionMeta[];
   extra?: React.ReactNode;
+  /** One-line badge for the table centre; the full card stays below. */
+  compact?: boolean;
 }) {
   const g = GRADE_STYLE[grade.grade]!;
+  if (compact) {
+    return (
+      <div className={`num flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-0.5 text-xs ${g.cls}`}>
+        <span aria-hidden>{g.icon}</span>
+        <span className="font-semibold">{g.label}</span>
+        {grade.ev_loss !== null && <span className="text-ink-2">−{grade.ev_loss.toFixed(2)}bb</span>}
+      </div>
+    );
+  }
   return (
     <div className={`rounded-xl border p-4 ${g.cls}`}>
       <div className="flex items-center justify-between gap-3">

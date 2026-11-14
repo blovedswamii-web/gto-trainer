@@ -10,39 +10,61 @@ import RangeEditor from "./pages/RangeEditor";
 import RangeViewer from "./pages/RangeViewer";
 
 const NAV = [
-  { to: "/", label: "Ranges" },
-  { to: "/drill", label: "Preflop drill" },
-  { to: "/postflop", label: "Postflop" },
-  { to: "/tools", label: "Equity & odds" },
-  { to: "/progress", label: "Progress" },
-  { to: "/editor", label: "Range editor" },
-  { to: "/pushfold", label: "Push/fold (ICM)" },
-  { to: "/review", label: "Hand review" },
-  { to: "/anki", label: "Anki" },
+  {
+    group: "Train",
+    links: [
+      { to: "/drill", label: "Preflop drill" },
+      { to: "/postflop", label: "Postflop" },
+      { to: "/pushfold", label: "Push/fold (ICM)" },
+    ],
+  },
+  {
+    group: "Study",
+    links: [
+      { to: "/", label: "Ranges" },
+      { to: "/editor", label: "Range editor" },
+      { to: "/tools", label: "Equity & odds" },
+    ],
+  },
+  {
+    group: "Review",
+    links: [
+      { to: "/review", label: "Hand review" },
+      { to: "/progress", label: "Progress" },
+      { to: "/anki", label: "Anki" },
+    ],
+  },
 ];
 
 export default function App() {
   return (
     <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-40 border-b border-surface-3 bg-surface-0/90 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-4 py-2.5">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-6 gap-y-1 px-4 py-2.5">
           <span className="font-semibold tracking-tight">
             GTO<span className="text-act-call">trainer</span>
           </span>
-          <nav className="flex flex-wrap gap-1">
-            {NAV.map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.to === "/"}
-                className={({ isActive }) =>
-                  `rounded-md px-3 py-1.5 text-sm ${
-                    isActive ? "bg-surface-2 text-ink-1" : "text-ink-3 hover:text-ink-1"
-                  }`
-                }
-              >
-                {n.label}
-              </NavLink>
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {NAV.map((g) => (
+              <div key={g.group} className="flex flex-wrap items-center gap-1" role="group" aria-label={g.group}>
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+                  {g.group}
+                </span>
+                {g.links.map((n) => (
+                  <NavLink
+                    key={n.to}
+                    to={n.to}
+                    end={n.to === "/"}
+                    className={({ isActive }) =>
+                      `rounded-md px-3 py-1.5 text-sm ${
+                        isActive ? "bg-surface-2 text-ink-1" : "text-ink-3 hover:text-ink-1"
+                      }`
+                    }
+                  >
+                    {n.label}
+                  </NavLink>
+                ))}
+              </div>
             ))}
           </nav>
         </div>

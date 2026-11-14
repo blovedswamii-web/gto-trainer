@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from pathlib import Path
 
@@ -188,6 +188,7 @@ class CompiledSpot:
             villain_range_text=(
                 format_range(self.villain_range) if self.villain_range is not None else None
             ),
+            table=self.ctx.table,
         )
 
 
@@ -204,15 +205,7 @@ def compile_spot(sf: SpotFile, path: Path) -> CompiledSpot:
     ctx = build_context(fmt, sf.scenario, sf.hero, sf.villain)
     actions = sf.actions or ctx.actions
     if sf.actions:
-        ctx = SpotContext(
-            ctx.history,
-            ctx.pot_bb,
-            ctx.to_call_bb,
-            sf.actions,
-            ctx.title,
-            ctx.villain_spot,
-            ctx.reach_spot,
-        )
+        ctx = replace(ctx, actions=sf.actions, continue_spot=None)
     ids = [a.id for a in actions]
     if sf.default_action not in ids:
         raise StrategyError(f"default_action {sf.default_action!r} not in actions {ids}")

@@ -16,7 +16,7 @@ from ..poker.cards import CLASS_LABELS, COMBO_CLASS, COMBOS, card_to_str, combo_
 from ..solver.categories import CATEGORIES
 from ..solver.postflop import NodeData, Solution
 from ..solver.tree import action_label
-from ..strategies.schemas import SourceTag
+from ..strategies.schemas import SeatState, SourceTag, TableState
 from .grading import GradeResult, grade_decision
 from .srs import update_item
 
@@ -118,10 +118,62 @@ def strategy_view(
     return {"overall": overall, "range_combos": total, "categories": cat_rows, "grid": grid}
 
 
+def _seat_chips(sol: Solution, path: str) -> tuple[list[float], list[float], list[str | None]]:
+    """Per seat (OOP, IP): stack behind, chips put in on this street, last action this street.
+
+    A node only stores the actor's stack, the pot and the amount to call, so the opponent's
+    side is recovered from the pot, and this street's chips from the node that opened the
+    street (where both players have put in the same amount).
+    """
+    tree = sol.spot["tree"]
+    start_stack, start_pot = float(tree["stack"]), float(tree["starting_pot"])
+    nd = sol.nodes[path]
+    a, o = nd.actor, 1 - nd.actor
+    inv = [0.0, 0.0]
+    inv[a] = start_stack - nd.stack
+    inv[o] = nd.pot - start_pot - inv[a]
+
+    last: list[str | None] = [None, None]
+    street_root = prefix = ""
+    for tok in path.split("/") if path else []:
+        node = sol.nodes.get(prefix)
+        prefix = f"{prefix}/{tok}" if prefix else tok
+        if node is None:  # chance token: a new street starts after it
+            last = [None, None]
+            street_root = prefix
+        else:
+            last[node.actor] = tok.partition(":")[0]
+    before = start_stack - sol.nodes[street_root].stack  # each player's chips in before this street
+    return (
+        [round(start_stack - x, 4) for x in inv],
+        [round(max(0.0, x - before), 4) for x in inv],
+        last,
+    )
+
+
 def node_structure(sol: Solution, path: str) -> dict[str, Any]:
     """Everything about a node except strategies: board, pot, history, navigation."""
     nd = sol.nodes[path]
     oop, ip = sol.positions()
+    stacks, street_inv, last = _seat_chips(sol, path)
+    table = TableState(
+        seats=[
+            SeatState(
+                position=p,
+                stack_bb=stacks[i],
+                committed_bb=street_inv[i],
+                is_hero=i == nd.actor,
+                is_actor=i == nd.actor,
+                is_villain=i != nd.actor,
+                last_action=last[i],
+            )
+            for i, p in enumerate((oop, ip))
+        ],
+        dealer=ip,
+        pot_bb=nd.pot,
+        to_call_bb=nd.to_call,
+        board=list(nd.board),
+    ).model_dump()
     children: dict[str, Any] = {}
     for a in nd.actions:
         child = f"{path}/{a}" if path else a
@@ -144,6 +196,7 @@ def node_structure(sol: Solution, path: str) -> dict[str, Any]:
         "actor": "OOP" if nd.actor == 0 else "IP",
         "actor_position": oop if nd.actor == 0 else ip,
         "villain_position": ip if nd.actor == 0 else oop,
+        "table": table,
         "history": _history(sol, path),
         "actions": [{"id": a, "label": action_label(a)} for a in nd.actions],
         "children": children,

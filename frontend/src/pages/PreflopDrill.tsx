@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GradeCard, SessionBar, keyToAction } from "../components/Feedback";
+import { useCallback, useState } from "react";
+import { ActionBar } from "../components/ActionBar";
+import { GradeCard, SessionBar } from "../components/Feedback";
+import { PokerTable, type TableResult } from "../components/PokerTable";
 import { SpotView } from "../components/SpotView";
-import { ErrorNote, HistoryLine, Panel, Pill, PlayingCard, SourceBadge } from "../components/ui";
+import { ErrorNote, FilterDisclosure, HistoryLine, Panel, Pill, PlayingCard, SourceBadge } from "../components/ui";
 import { pct, toActionMetas } from "../lib/actions";
 import { api } from "../lib/api";
-import type { PreflopDeal, PreflopFeedback, Scenario } from "../lib/types";
+import { useApi } from "../lib/hooks";
+import type { FormatOut, PreflopDeal, PreflopFeedback, Scenario } from "../lib/types";
+import { useDrill } from "../lib/useDrill";
 
 const SCENARIOS: { id: Scenario; label: string }[] = [
   { id: "rfi", label: "RFI" },
@@ -13,98 +17,65 @@ const SCENARIOS: { id: Scenario; label: string }[] = [
   { id: "vs_3bet", label: "vs 3-bet" },
   { id: "vs_4bet", label: "vs 4-bet" },
 ];
-const POSITIONS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+const FALLBACK_POSITIONS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+const DRILL_FORMAT = "6max_100bb";
 
 function toggle<T>(xs: T[], x: T): T[] {
   return xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x];
 }
 
 export default function PreflopDrill() {
+  const formats = useApi<FormatOut[]>("/formats");
+  const positionList =
+    formats.data?.find((f) => f.format.id === DRILL_FORMAT)?.positions ?? FALLBACK_POSITIONS;
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [positions, setPositions] = useState<string[]>([]);
   const [focus, setFocus] = useState<"boundary" | "uniform">("boundary");
   const [useSrs, setUseSrs] = useState(true);
-  const [deal, setDeal] = useState<PreflopDeal | null>(null);
-  const [fb, setFb] = useState<PreflopFeedback | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [stats, setStats] = useState({ n: 0, points: 0, freqErr: 0 });
-  const shownAt = useRef(0);
+  const [preview, setPreview] = useState<number | null>(null);
 
-  const next = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const d = await api.post<PreflopDeal>("/drill/preflop/next", {
+  const fetchNext = useCallback(
+    () =>
+      api.post<PreflopDeal>("/drill/preflop/next", {
         scenarios,
         positions,
         focus,
         use_srs: useSrs,
-      });
-      setDeal(d);
-      setFb(null);
-      shownAt.current = performance.now();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [scenarios, positions, focus, useSrs]);
-
-  const answer = useCallback(
-    async (action: string) => {
-      if (!deal || fb || busy) return;
-      setBusy(true);
-      try {
-        const r = await api.post<PreflopFeedback>("/drill/preflop/answer", {
-          spot_id: deal.spot.id,
-          combo: deal.combo,
-          action,
-          response_ms: Math.round(performance.now() - shownAt.current),
-          reason: deal.reason,
-        });
-        setFb(r);
-        setStats((s) => ({
-          n: s.n + 1,
-          points: s.points + r.grade.points,
-          freqErr: s.freqErr + r.grade.freq_error,
-        }));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setBusy(false);
-      }
-    },
-    [deal, fb, busy],
+      }),
+    [scenarios, positions, focus, useSrs],
   );
+  const submit = useCallback(
+    (deal: PreflopDeal, action: string, responseMs: number) =>
+      api.post<PreflopFeedback>("/drill/preflop/answer", {
+        spot_id: deal.spot.id,
+        combo: deal.combo,
+        action,
+        response_ms: responseMs,
+        reason: deal.reason,
+      }),
+    [],
+  );
+  const { deal, fb, busy, error, stats, actions, next, answer } = useDrill<PreflopDeal, PreflopFeedback>({
+    fetchNext,
+    submit,
+    actionsOf: useCallback((d: PreflopDeal) => toActionMetas(d.actions), []),
+    refetchOn: [scenarios, positions, focus], // not useSrs: toggling it applies from the next deal
+  });
 
-  useEffect(() => {
-    void next();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only when filters change
-  }, [scenarios, positions, focus]);
-
-  const actions = useMemo(() => (deal ? toActionMetas(deal.actions) : []), [deal]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (fb && (e.key === " " || e.key === "Enter" || e.key.toLowerCase() === "n")) {
-        e.preventDefault();
-        void next();
-        return;
-      }
-      if (!fb && deal) {
-        const a = keyToAction(e.key, actions);
-        if (a) void answer(a);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [fb, deal, actions, next, answer]);
+  const sizeOf = (id: string) =>
+    id === "fold" ? null : (deal?.actions.find((a) => a.id === id)?.size_bb ?? null);
+  const result: TableResult | null =
+    deal && fb
+      ? {
+          chosen: actions.find((a) => a.id === fb.grade.chosen) ?? actions[0]!,
+          chosenBb: sizeOf(fb.grade.chosen),
+          mix: actions.map((a) => ({ action: a, freq: fb.combo_freqs[a.id] ?? 0 })),
+        }
+      : null;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <FilterDisclosure right={<SessionBar {...stats} />}>
         <div className="flex flex-wrap items-center gap-1">
           <span className="mr-1 text-xs text-ink-3">Spots</span>
           {SCENARIOS.map((s) => (
@@ -115,7 +86,7 @@ export default function PreflopDrill() {
         </div>
         <div className="flex flex-wrap items-center gap-1">
           <span className="mr-1 text-xs text-ink-3">Hero</span>
-          {POSITIONS.map((p) => (
+          {positionList.map((p) => (
             <Pill key={p} active={positions.includes(p)} onClick={() => setPositions((x) => toggle(x, p))}>
               {p}
             </Pill>
@@ -134,14 +105,11 @@ export default function PreflopDrill() {
           <input type="checkbox" checked={useSrs} onChange={(e) => setUseSrs(e.target.checked)} />
           Review mistakes (spaced repetition)
         </label>
-        <div className="ml-auto">
-          <SessionBar {...stats} />
-        </div>
-      </div>
+      </FilterDisclosure>
       <ErrorNote error={error} />
 
       {deal && (
-        <div className="grid gap-4 xl:grid-cols-[440px_minmax(0,1fr)]">
+        <div className="grid gap-4 xl:grid-cols-[560px_minmax(0,1fr)]">
           <div className="space-y-4">
             <Panel
               title={
@@ -157,36 +125,46 @@ export default function PreflopDrill() {
               right={<SourceBadge source={deal.spot.source} compact />}
             >
               <HistoryLine history={deal.history} hero={deal.spot.hero} />
-              <div className="my-6 flex items-center justify-center gap-6">
-                <div className="flex gap-2">
-                  {deal.hero_cards.map((c) => (
-                    <PlayingCard key={c} card={c} size="lg" />
-                  ))}
-                </div>
-                <div className="num text-sm text-ink-2">
-                  <div>
-                    Pot <span className="text-ink-1">{deal.pot_bb}bb</span>
-                  </div>
-                  <div>
-                    To call <span className="text-ink-1">{deal.to_call_bb}bb</span>
-                  </div>
-                  <div className="text-ink-3">100bb effective</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {actions.map((a, i) => (
-                  <button
-                    key={a.id}
-                    disabled={!!fb || busy}
-                    onClick={() => void answer(a.id)}
-                    className="rounded-lg border-2 bg-surface-2 px-3 py-3 text-sm font-semibold transition hover:bg-surface-3 disabled:opacity-50"
-                    style={{ borderColor: a.color }}
+              {deal.table ? (
+                <div className="mt-3">
+                  <PokerTable
+                    table={deal.table}
+                    heroCards={deal.hero_cards}
+                    heroBet={fb ? null : preview}
+                    result={result}
+                    canCall={actions.some((a) => a.id === "call")}
+                    centre={fb && <GradeCard compact grade={fb.grade} freqs={fb.combo_freqs} actions={actions} />}
                   >
-                    {a.label}
-                    <span className="ml-1.5 text-[10px] font-normal text-ink-3">[{i + 1}]</span>
-                  </button>
-                ))}
-              </div>
+                    <ActionBar
+                      actions={actions}
+                      disabled={!!fb || busy}
+                      onPick={(id) => void answer(id)}
+                      sizeOf={sizeOf}
+                      onPreview={setPreview}
+                    />
+                  </PokerTable>
+                </div>
+              ) : (
+                <>
+                  <div className="my-6 flex items-center justify-center gap-6">
+                    <div className="flex gap-2">
+                      {deal.hero_cards.map((c) => (
+                        <PlayingCard key={c} card={c} size="lg" />
+                      ))}
+                    </div>
+                    <div className="num text-sm text-ink-2">
+                      <div>
+                        Pot <span className="text-ink-1">{deal.pot_bb}bb</span>
+                      </div>
+                      <div>
+                        To call <span className="text-ink-1">{deal.to_call_bb}bb</span>
+                      </div>
+                      <div className="text-ink-3">100bb effective</div>
+                    </div>
+                  </div>
+                  <ActionBar actions={actions} disabled={!!fb || busy} onPick={(id) => void answer(id)} />
+                </>
+              )}
             </Panel>
 
             {fb && (

@@ -45,9 +45,7 @@ export function Board({ cards, size = "md" }: { cards: string[]; size?: "sm" | "
 export function PfHistory({ node }: { node: PfNodeBase }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-sm">
-      <span className="text-ink-3">
-        {node.pot_type} · {node.villain_position === node.actor_position ? "" : ""}
-      </span>
+      <span className="text-ink-3">{node.pot_type} ·</span>
       {node.history.map((h, i) =>
         h.kind === "card" ? (
           <span key={i} className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-xs">

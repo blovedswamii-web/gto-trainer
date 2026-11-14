@@ -73,6 +73,27 @@ class HistoryStep(BaseModel):
     size_bb: float | None = None
 
 
+class SeatState(BaseModel):
+    """One seat at the table, as rendered by the frontend."""
+
+    position: str
+    stack_bb: float  # behind, after chips committed
+    committed_bb: float  # in front of the seat this street (blinds included)
+    folded: bool = False
+    is_hero: bool = False
+    is_actor: bool = False  # seat whose turn it is
+    is_villain: bool = False  # the opponent hero's decision is against
+    last_action: str | None = None  # raise | 3bet | 4bet | call | check | bet | allin
+
+
+class TableState(BaseModel):
+    seats: list[SeatState]  # table order, first to act preflop first
+    dealer: str
+    pot_bb: float
+    to_call_bb: float
+    board: list[str] = Field(default_factory=list)
+
+
 class SpotFile(BaseModel):
     """One spot as written in a JSON file (loose: most fields are derivable)."""
 
@@ -153,3 +174,4 @@ class SpotDetail(BaseModel):
     stats: SpotStats
     notes: str
     villain_range_text: str | None
+    table: TableState | None = None

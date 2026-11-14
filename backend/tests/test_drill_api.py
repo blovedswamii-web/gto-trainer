@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
@@ -33,6 +34,31 @@ def test_deal_and_answer_records_decision() -> None:
     assert fb["detail"]["summary"]["id"] == deal["spot"]["id"]
     with session() as s:
         assert s.scalar(select(func.count()).select_from(Decision)) == 1
+
+
+def test_table_state_invariants_every_scenario() -> None:
+    seen: set[str] = set()
+    for seed in range(200):
+        deal = client.post("/api/drill/preflop/next", json={"seed": seed, "use_srs": False}).json()
+        sc = deal["spot"]["scenario"]
+        t = deal["table"]
+        assert sum(x["committed_bb"] for x in t["seats"]) == pytest.approx(t["pot_bb"])
+        assert t["pot_bb"] == deal["pot_bb"] and t["to_call_bb"] == deal["to_call_bb"]
+        assert sum(x["is_hero"] for x in t["seats"]) == 1
+        assert sum(x["is_actor"] for x in t["seats"]) == 1
+        assert t["board"] == []
+        seen.add(sc)
+    assert seen == {"rfi", "vs_open", "bb_defense", "vs_3bet", "vs_4bet"}
+
+
+def test_btn_vs_co_open_table() -> None:
+    d = client.get("/api/spots/6max_100bb.vs_open.BTN_vs_CO").json()
+    seats = {x["position"]: x for x in d["table"]["seats"]}
+    assert seats["CO"]["committed_bb"] == 2.5 and seats["CO"]["is_villain"]
+    assert seats["SB"]["committed_bb"] == 0.5 and seats["BB"]["committed_bb"] == 1.0
+    assert seats["UTG"]["folded"] and seats["HJ"]["folded"]
+    assert seats["BTN"]["is_hero"] and seats["BTN"]["is_actor"]
+    assert d["table"]["pot_bb"] == d["pot_bb"]
 
 
 def test_mistake_creates_due_review_item() -> None:

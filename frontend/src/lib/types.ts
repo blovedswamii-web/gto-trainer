@@ -59,6 +59,25 @@ export interface SpotStats {
   value_bluff: ValueBluff[];
 }
 
+export interface SeatState {
+  position: string;
+  stack_bb: number;
+  committed_bb: number;
+  folded: boolean;
+  is_hero: boolean;
+  is_actor: boolean;
+  is_villain: boolean;
+  last_action: string | null;
+}
+
+export interface TableState {
+  seats: SeatState[];
+  dealer: string;
+  pot_bb: number;
+  to_call_bb: number;
+  board: string[];
+}
+
 export interface SpotDetail {
   summary: SpotSummary;
   history: HistoryStep[];
@@ -69,6 +88,7 @@ export interface SpotDetail {
   stats: SpotStats;
   notes: string;
   villain_range_text: string | null;
+  table?: TableState | null;
 }
 
 export interface GameFormat {
@@ -109,6 +129,7 @@ export interface PreflopDeal {
   hand_class: string;
   combo: string;
   reason: string;
+  table?: TableState | null;
 }
 
 export type GradeName = "best" | "good" | "minor" | "mistake";
@@ -176,6 +197,7 @@ export interface PfNodeBase {
   actions: { id: string; label: string }[];
   children: Record<string, PfChild>;
   source: SourceTag;
+  table?: TableState | null;
 }
 
 export interface PfNode extends PfNodeBase {
